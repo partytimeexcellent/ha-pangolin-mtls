@@ -1,6 +1,6 @@
 # Architecture proposal
 
-Date: October 22, 2026. Status: proposed; Phase 1 only. Evidence and precise API routes are in [research.md](docs/research.md). Prototype gates are in [validation-plan.md](docs/validation-plan.md).
+Date: October 22, 2026. Status: architecture approved for Phase 2, with the first ingress increment implemented. Most components below remain proposed. Evidence and precise API routes are in [research.md](docs/research.md). Prototype gates are in [validation-plan.md](docs/validation-plan.md); actual results are in [phase-2-results.md](docs/phase-2-results.md).
 
 ## Deployment and trust boundaries
 
@@ -29,16 +29,16 @@ For a connector on another machine, configure the target as the Home Assistant L
 | UI | React, Vite, bundled assets | No CDN or remote scripts; accessible HA-like light/dark interface |
 | Metadata | SQLite via better-sqlite3, versioned migrations | One writer; verify native builds on both architectures |
 | PKI | OpenSSL 3.x supported distribution package; Node crypto for tokens/hashes | Established X.509 and PKCS#12 tools; no custom cryptography |
-| Container | Pinned HA Debian base with S6, multi-stage build | glibc simplifies native SQLite/Node packaging; verify size and maintained Node supply |
+| Container | Pinned official Node Debian image, multi-stage build | One process with Supervisor init; glibc supports future SQLite packaging |
 | Tests | Node test runner or Vitest; browser tests with Playwright | Choose and lock during the prototype |
 
 The Node release status is checked against [official releases](https://nodejs.org/en/blog); no package versions are locked in this documentation-only phase. Debian is a deliberate compatibility choice over the smaller Alpine base. Use [HA's supported image/build conventions](https://contributors.home-assistant.io/apps/guides/dockerfile/). No Redis, external database, CA server, or extra reverse proxy is needed.
 
 ## Supervisor packaging contract
 
-Planned root `repository.yaml` plus a `pangolin_access/` app directory. Publish `amd64` and `aarch64` images from one multi-architecture build. Manifest intent: `startup: application`, `boot: auto`, `stage: experimental`, `ingress: true`, `ingress_port: 8099`, `init: false` for S6, `backup: cold`, a graceful shutdown timeout, and no host port mappings. Retain AppArmor and protection mode. No host networking, capabilities, devices, Docker socket, Core API, auth API, or broad Supervisor API grants.
+Root `repository.yaml` plus a `pangolin_access/` app directory are implemented for local development. The prototype uses a pinned official Node Debian image with `init: true` so Supervisor provides init; there is no S6 or service supervisor to maintain for a single server. `boot: manual` keeps this experimental build opt-in. Other manifest settings are `startup: application`, `stage: experimental`, `ingress: true`, `ingress_port: 8099`, `backup: cold`, a graceful shutdown timeout, and no host port mappings. Retain default AppArmor and protection mode. No host networking, capabilities, devices, Docker socket, Core API, auth API, or broad Supervisor API grants. Both architectures are declared, but build/installation verification is pending.
 
-`/data` is the only persistent application directory; do not mount Core configuration or `/ssl`. A startup oneshot sets ownership and permissions, then S6 runs Node under a dedicated non-root UID. Handle SIGTERM by rejecting new mutations, finishing or recording jobs, closing SQLite, and deleting temporary credentials. Separate process liveness from Pangolin connectivity; a remote outage should not trigger endless restarts. Prototype a Supervisor watchdog using the supported local health mechanism without bypassing ingress authorization. [Manifest reference](https://contributors.home-assistant.io/apps/reference/configuration/).
+`/data` is the only persistent application directory; do not mount Core configuration or `/ssl`. The prototype briefly reads Supervisor options and prepares `/data/state` as root, then clears supplementary groups and drops to UID/GID 1000 before listening. Future jobs/database must handle SIGTERM by rejecting new mutations, finishing or recording jobs, closing SQLite, and deleting temporary credentials. Separate process liveness from Pangolin connectivity; a remote outage should not trigger endless restarts. The initial image health check verifies only the listening TCP socket; a Supervisor watchdog remains unimplemented rather than bypassing ingress authorization. [Manifest reference](https://contributors.home-assistant.io/apps/reference/configuration/).
 
 Use fixed base images and build arguments in Dockerfile; current HA documentation deprecates separate `build.yaml` and no longer guarantees a supplied `BUILD_FROM`. Generate HA metadata labels through the official builder or explicitly when using another builder. Package `DOCS.md`, `CHANGELOG.md`, translations, and an AppArmor profile in Phase 4. Use semantic app versions, migration backups, and `breaking_versions` for changes requiring attention. [Build reference](https://contributors.home-assistant.io/apps/guides/dockerfile/), [presentation requirements](https://contributors.home-assistant.io/apps/guides/presentation/).
 
@@ -92,14 +92,13 @@ Dashboard pages: Overview, Pangolin, Devices, Certificate Authority, Settings, D
 
 ## Repository structure
 
-Only Markdown documents exist now. After approval, introduce this structure incrementally:
+The first prototype introduces the app and build folders below. PKI, database, migrations and broader test layers remain future increments:
 
 ```text
 repository.yaml
 pangolin_access/
   config.yaml, Dockerfile, apparmor.txt, README.md, DOCS.md, CHANGELOG.md
   translations/en.yaml
-  rootfs/etc/s6-overlay/...
   package.json, package-lock.json
   server/                  # API, auth, PKI, storage, jobs, Pangolin adapter
   web/                     # React dashboard, relative Vite output
@@ -111,4 +110,4 @@ README.md, ARCHITECTURE.md, SECURITY.md, ROADMAP.md, AGENTS.md
 docs/
 ```
 
-Keep the build context compatible with Supervisor's app-directory builds; application source and lockfile live inside that directory. No release manifests with placeholder owners or images are created during Phase 1.
+Keep the build context compatible with Supervisor's app-directory builds; application source and lockfile live inside that directory. The current manifest builds locally and deliberately has no placeholder owner, repository URL, maintainer or published image.

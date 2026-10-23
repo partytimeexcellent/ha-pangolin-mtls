@@ -1,6 +1,6 @@
 # Security design and threat model
 
-Status: proposed, October 22, 2026. No implementation has been audited or released. This document defines requirements and residual risks; it is not a security certification.
+Status: security requirements with an initial ingress prototype, October 22, 2026. No implementation has been independently audited or released. This document defines requirements and residual risks; it is not a security certification. See [actual prototype checks](docs/phase-2-results.md); unimplemented requirements below remain release gates.
 
 ## Assets and boundaries
 

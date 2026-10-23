@@ -2,7 +2,7 @@
 
 ## Current scope
 
-This project is at Phase 1. Read README.md, ARCHITECTURE.md, SECURITY.md, ROADMAP.md and docs/research.md before changes. The project owner must approve Phase 2 before implementation; do not infer approval from this file. Keep research conclusions distinct from real integration results.
+The project owner has approved Phase 2. The first ingress-only prototype is implemented; real Supervisor authorization acceptance is pending. Read README.md, ARCHITECTURE.md, SECURITY.md, ROADMAP.md, docs/research.md and docs/phase-2-results.md before changes. Continue Phase 2 in small increments. Keep signing disabled until ingress authorization is validated on the actual test installation. Phase 3 still requires a successful POC and owner review. Keep research conclusions distinct from real integration results.
 
 ## Non-negotiable design constraints
 

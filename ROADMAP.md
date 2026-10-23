@@ -1,6 +1,6 @@
 # Incremental delivery plan
 
-Status: Phase 1 deliverables ready for review, October 22, 2026. Later phases are not authorized by this document.
+Status: Phase 2 approved by the owner; first ingress increment implemented, October 22, 2026. Phase 3 remains gated on successful POC validation and owner review.
 
 ## Phase 1 — research and architecture
 
@@ -16,9 +16,11 @@ Owner decisions before Phase 2:
 - Accept automatic startup's at-rest limitations, with encrypted recovery export required before release.
 - Select an isolated HA/Pangolin test environment and Apple devices for acceptance; do not test destructive trust changes against a household's only working remote path.
 
-Phase 1 approval is explicitly required by the project brief. Stop here until approved.
+Phase 1 approval was provided by the owner with “proceed.” The architecture's experiments remain acceptance gates rather than claims of completed validation.
 
 ## Phase 2 — minimal proof of concept
+
+Current progress: source/build toolchain, local HA packaging, ingress authorization UI and 13 automated tests are implemented. Local TypeScript/build/test checks pass. Native container builds, real ingress identity/authorization acceptance, and all certificate/Pangolin/device experiments remain pending. See [recorded results](docs/phase-2-results.md). Signing remains disabled.
 
 Deliver in small reviewable commits:
 

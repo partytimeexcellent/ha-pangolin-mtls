@@ -1,6 +1,6 @@
 # Troubleshooting plan
 
-The app is not implemented yet. These are expected diagnostic categories and safe checks for the POC.
+Only the ingress authorization prototype is implemented. These are expected diagnostic categories and safe checks for the broader POC; certificate and Pangolin functions remain unavailable in the current build. See [prototype setup](../pangolin_access/DOCS.md).
 
 | Symptom | Check |
 | --- | --- |
