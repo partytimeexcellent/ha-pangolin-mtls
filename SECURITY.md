@@ -37,6 +37,8 @@ Apply request size limits, bounded names and lifetime values, serialized sensiti
 
 ## At-rest encryption and startup
 
+Implemented POC (`0.1.0-dev.3`): the CA key uses standard encrypted PKCS#8, and a random 0600 local unlock secret enables automatic startup. SQLite metadata remains unencrypted. The paired files are protected by a 0700 directory, but a full backup/host compromise yields both. There is no manual-unlock or separate recovery-archive feature yet. The POC's default-off certificate option additionally requires HTTPS and explicit authenticated creation/download actions. These are implementation facts, not a completed independent review.
+
 Three different protections must be explained accurately:
 
 1. Filesystem permissions constrain processes but do not encrypt storage or backups.

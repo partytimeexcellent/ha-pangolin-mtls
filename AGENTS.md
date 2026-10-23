@@ -2,7 +2,7 @@
 
 ## Current scope
 
-The project owner has approved Phase 2. The first ingress-only prototype is implemented; real Supervisor authorization acceptance is pending. Read README.md, ARCHITECTURE.md, SECURITY.md, ROADMAP.md, docs/research.md and docs/phase-2-results.md before changes. Continue Phase 2 in small increments. Keep signing disabled until ingress authorization is validated on the actual test installation. Phase 3 still requires a successful POC and owner review. Keep research conclusions distinct from real integration results.
+The project owner has approved Phase 2 and the standalone CA/PKCS#12 increment after reporting successful authorized access, empty-allowlist denial and restored access. Read README.md, ARCHITECTURE.md, SECURITY.md, ROADMAP.md, docs/research.md and docs/phase-2-results.md before changes. Continue Phase 2 in small increments. Certificate management stays default-off and requires an HTTPS origin plus explicit creation actions. Broader E1 checks remain tracked; do not claim full acceptance from these three results. No live Pangolin trust or remote-access changes are authorized by standalone certificate testing. Phase 3 still requires a successful POC and owner review. Keep research conclusions distinct from real integration results.
 
 ## Non-negotiable design constraints
 

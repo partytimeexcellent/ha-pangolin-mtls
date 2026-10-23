@@ -2,11 +2,11 @@
 
 A proposed Home Assistant Supervisor app for managing device certificates and remote access through Pangolin mTLS.
 
-**Status: Phase 2 approved; first ingress prototype implemented, October 22, 2026.** This development increment checks administrator authorization only. Certificate issuance and Pangolin changes remain unavailable pending real Supervisor ingress acceptance. No image or public release has been published.
+**Status: Phase 2 certificate prototype, October 22, 2026.** Version `0.1.0-dev.3` adds explicit local CA creation, device issuance and password-protected PKCS#12 export behind a default-off option. It does not contact or configure Pangolin. No prebuilt image or production release has been published.
 
 The source, lockfile, app manifest and Dockerfile are in [pangolin_access](pangolin_access/README.md). Native amd64/aarch64 container builds and runtime checks passed on GitHub Actions. Real HA ingress and Apple compatibility remain unverified. See [local development](docs/development.md) and [prototype validation results](docs/phase-2-results.md).
 
-For the ingress-only prototype, add `https://github.com/partytimeexcellent/ha-pangolin-mtls` to Home Assistant's app repositories. Follow the [setup guide](pangolin_access/DOCS.md) before starting it. It cannot issue certificates or change Pangolin.
+Add `https://github.com/partytimeexcellent/ha-pangolin-mtls` to Home Assistant's app repositories. Follow the [setup guide](pangolin_access/DOCS.md) before enabling certificate management. Upgrading alone does not create a CA or device identity.
 
 The intended deployment is one Supervisor-managed container containing the dashboard, API, PKI, enrollment, database, and diagnostics. An existing Pangolin server and a connected site that can reach Home Assistant are prerequisites. No additional certificate service or Compose deployment is required.
 
@@ -14,7 +14,7 @@ The intended deployment is one Supervisor-managed container containing the dashb
 
 1. Use TypeScript, Fastify, Zod, React/Vite, SQLite, and OpenSSL inside one container.
 2. Use an organization-scoped Pangolin integration API key and an explicitly supplied organization ID. Server-wide organization discovery requires root privileges and is excluded from the default workflow.
-3. Start with a dedicated shared CA. Pangolin's inspected mTLS implementation verifies CA trust but exposes no individual certificate revocation mechanism. Retiring a database record does not block a device. A lost device can require replacing the CA and re-enrolling every remaining device.
+3. Start with a dedicated shared CA. Pangolin's inspected mTLS implementation verifies CA trust but exposes no individual certificate revocation mechanism. Retiring a database record does not block a device. A lost device can require replacing the CA and re-enrolling every remaining device. The current prototype does not implement retirement or revocation controls.
 4. Enroll locally through authenticated Home Assistant ingress, then import the password-protected `.p12` into Companion itself. No public provisioning service in the first release.
 5. Prototype Apple clients and real Pangolin handshakes before implementing the full product. Source support is evidence, not a device compatibility certification.
 
@@ -36,4 +36,4 @@ Read [ARCHITECTURE.md](ARCHITECTURE.md), [SECURITY.md](SECURITY.md), [research e
 - [Certificate management](docs/certificate-management.md)
 - [Troubleshooting](docs/troubleshooting.md)
 
-The enrollment guides describe future workflow and remain untested. The prototype has its own [setup guide](pangolin_access/DOCS.md). Public repository URL, maintainer contact, license selection, and security reporting channel remain release decisions; this repository does not yet grant an open-source license.
+The Apple enrollment guides describe future device validation and remain untested. The prototype has its own [setup guide](pangolin_access/DOCS.md). Maintainer contact, license selection, and security reporting channel remain release decisions; this repository does not yet grant an open-source license. Separate encrypted CA recovery export and rotation remain release gates; use a protected Supervisor backup for the current prototype.

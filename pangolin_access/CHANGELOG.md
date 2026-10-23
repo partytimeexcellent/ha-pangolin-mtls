@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.1.0-dev.3
+
+- Add default-off, HTTPS-only CA creation and device certificate issuance, protected by the existing ingress/user/session/CSRF checks.
+- Generate RSA-3072/SHA-256 identities with clientAuth EKU and encrypted PKCS#12 packages; retain public issuance history in SQLite.
+- Store the CA signing key as encrypted PKCS#8 with a local automatic-unlock secret; disclose the limits of colocated key storage.
+- Add actor-bound hashed download capabilities, single-use POST redemption, five-minute in-memory retention and restart invalidation.
+- Add CA public-certificate download and responsive issuance UI; no private-key or permanent package-download endpoint.
+- Add disposable cryptographic, API, restart/restore and native runtime tests. Pangolin configuration, Apple import validation, renewal, rotation and separate recovery export remain pending.
+
 ## 0.1.0-dev.2
 
 - Show the specific failed stage and a fixed diagnostic code instead of replacing all access failures with a generic message.

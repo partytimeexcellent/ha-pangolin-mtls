@@ -20,7 +20,7 @@ Phase 1 approval was provided by the owner with “proceed.” The architecture'
 
 ## Phase 2 — minimal proof of concept
 
-Current progress: source/build toolchain, HA packaging, ingress authorization UI and 13 automated tests are implemented. Local TypeScript/build/test checks pass. Native amd64/aarch64 builds and runtime smoke checks also passed on GitHub Actions. Real ingress identity/authorization acceptance and all certificate/Pangolin/device experiments remain pending. See [recorded results](docs/phase-2-results.md). Signing remains disabled.
+Current progress: ingress authorized/empty-allowlist/restored-access checks have owner-reported PASS results. Version `0.1.0-dev.3` adds default-off CA generation, leaf issuance, SQLite metadata and single-use password-protected PKCS#12 downloads. Local typecheck/build and 26 tests pass, including real disposable cryptography, restart and cold-copy recovery. Native CI and real-device checks for this new increment are tracked in [recorded results](docs/phase-2-results.md). Additional E1 cases, real Apple import and Pangolin integration remain pending. No Pangolin trust change is authorized by local issuance testing.
 
 Deliver in small reviewable commits:
 

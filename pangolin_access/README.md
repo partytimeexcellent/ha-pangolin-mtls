@@ -1,5 +1,5 @@
-# HA Pangolin Access — ingress prototype
+# HA Pangolin Access — certificate prototype
 
-Development build for testing administrator identity and request protection inside Home Assistant ingress. **Certificate signing, exports and Pangolin changes are disabled.**
+Development build for testing administrator identity, dedicated CA creation and client PKCS#12 exports inside Home Assistant ingress. **Certificate management is off by default; Pangolin integration is not implemented.**
 
-Configure your allowed Home Assistant user IDs and the exact Home Assistant origin before opening the UI. No host port is exposed. See [DOCS.md](DOCS.md) for local installation and acceptance steps. This build is not a remote-access solution yet.
+Configure allowed Home Assistant user IDs and the exact HTTPS origin, then enable certificate management only when ready. The dashboard requires an explicit action to create a CA or client identity. Exports are password-protected, single-use and expire after five minutes. No host port is exposed. See [DOCS.md](DOCS.md). This build is not a remote-access solution yet.
