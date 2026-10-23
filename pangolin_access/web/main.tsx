@@ -28,7 +28,7 @@ function App() {
     </section>
     <CertificatePanel />
     <PangolinPanel />
-    <p className="footnote">Home Assistant login remains required. Device retirement alone does not revoke a certificate.</p>
+    <p className="footnote">Home Assistant login remains required. Individual certificate revocation is unavailable with the current Pangolin shared-CA setup.</p>
     <p className="footnote">Build {import.meta.env.VITE_APP_VERSION}</p>
   </main>;
 }

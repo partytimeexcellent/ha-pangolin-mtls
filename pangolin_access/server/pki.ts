@@ -1,4 +1,5 @@
 import { zipSync } from 'fflate';
+import { downloadFilename, identityFilename, profileFilename } from './download-names.js';
 import { appleProfile, profileDisplayName } from './apple-profile.js';
 import { DatabaseSync } from 'node:sqlite';
 import { createHash, createPrivateKey, generateKeyPair, randomBytes, randomUUID, X509Certificate } from 'node:crypto';
@@ -215,7 +216,7 @@ export class PkiService {
           this.audit(actor, 'certificate_issued', id); this.db.exec('COMMIT');
         } catch (error) { this.db.exec('ROLLBACK'); data.fill(0); throw error; }
         this.pending.set(tokenHash, { data, expires, certificateId: id });
-        return { id, password, token, expiresAt: expires, profileDisplayName: profileDisplayName(input.name, new Date(cert.validTo).toISOString()), certificate: this.inventory().find((item) => item.id === id)! };
+        return { id, password, token, expiresAt: expires, zipFilename: downloadFilename(input.platform, 'zip'), profileDisplayName: profileDisplayName(input.name, new Date(cert.validTo).toISOString()), certificate: this.inventory().find((item) => item.id === id)! };
       });
     });
   }
@@ -234,8 +235,8 @@ export class PkiService {
       const profile = appleProfile(certificate, pending.data);
       try {
         data = format === 'mobileconfig' ? Buffer.from(profile) : Buffer.from(zipSync({
-          [`ha-device-${id}.p12`]: pending.data,
-          [`ha-device-${id}.mobileconfig`]: profile,
+          [identityFilename]: pending.data,
+          [profileFilename]: profile,
         }, { level: 0 }));
       } finally { profile.fill(0); }
     }

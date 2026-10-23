@@ -1,3 +1,4 @@
+import { identityFilename } from './download-names.js';
 import { randomUUID } from 'node:crypto';
 
 export function profileDisplayName(name: string, expiresAt: string): string {
@@ -34,7 +35,7 @@ export function appleProfile(certificate: { id: string; name: string; expiresAt:
 <key>PayloadIdentifier</key><string>${identifier}.certificate</string>
 <key>PayloadUUID</key><string>${randomUUID()}</string>
 <key>PayloadDisplayName</key><string>${label}</string>
-<key>PayloadCertificateFileName</key><string>ha-device-${certificate.id}.p12</string>
+<key>PayloadCertificateFileName</key><string>${identityFilename}</string>
 <key>PayloadContent</key><data>${p12.toString('base64')}</data>
 </dict></array>
 </dict></plist>`, 'utf8');

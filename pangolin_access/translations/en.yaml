@@ -1,10 +1,26 @@
 configuration:
-  enable_certificate_management:
-    name: Enable certificate management prototype
-    description: "Enables explicit CA creation and device certificate export in the dashboard. Does not contact Pangolin. Off by default."
   admin_user_ids:
-    name: Authorized administrator user IDs
-    description: "Explicit Home Assistant user IDs allowed to open the app. Empty denies everyone."
+    name: Authorized Administrator User IDs
+    description: >-
+      Home Assistant user IDs allowed to manage certificates. An empty list denies everyone.
+      User-name selection is not available yet; use IDs from Home Assistant user details.
+  enable_certificate_management:
+    name: Enable Certificate Management
+    description: >-
+      Allow explicit CA creation, device issuance and replacement through authenticated ingress.
+      Requires an HTTPS Home Assistant Origin. Does not change Pangolin configuration.
+  enable_home_assistant_notifications:
+    name: Enable Home Assistant Notifications
+    description: >-
+      Send certificate-expiry reminders to the Home Assistant notification panel.
+      Requires certificate management and the app to remain running. Phone push is not included.
   home_assistant_origin:
-    name: Home Assistant origin
-    description: "Exact scheme, hostname and port used to open Home Assistant, without a path. Requests from other origins are rejected."
+    name: Home Assistant Origin
+    description: >-
+      Exact scheme, hostname and optional port used to open Home Assistant, such as
+      https://ha.example.net. Do not include a path, token or trailing ingress URL.
+  pangolin_api_url:
+    name: Pangolin API URL (Setup/Testing Only)
+    description: >-
+      Optional public HTTPS integration API URL ending in /v1. Used only for explicit
+      setup and troubleshooting checks. Daily client access and certificate replacement do not need it.

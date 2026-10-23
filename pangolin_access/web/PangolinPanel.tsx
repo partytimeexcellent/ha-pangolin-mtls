@@ -18,7 +18,7 @@ export function PangolinPanel() {
   const [identifier, setIdentifier] = useState('');
   const [hostname, setHostname] = useState('');
   const [resourceResult, setResourceResult] = useState<ResourceResult | null>(null);
-  const [message, setMessage] = useState('Ready for a read-only connection check.');
+  const [message, setMessage] = useState('Optional setup/testing tool. No API key is needed for daily use.');
   const [result, setResult] = useState<z.infer<typeof resultSchema> | null>(null);
   async function check(event: FormEvent) {
     event.preventDefault();
@@ -34,7 +34,7 @@ export function PangolinPanel() {
         setMessage('Read-only resource inspection completed. Review the findings below. No Pangolin configuration was changed.');
       } else {
         setResult(resultSchema.parse(await response.json()));
-        setMessage('Read-only check passed. No Pangolin configuration was changed.');
+        setMessage('Setup/testing API check passed. No Pangolin configuration was changed. Daily access does not need this API key.');
       }
     } catch (error) {
       setMessage(error instanceof Error && /\([A-Z_]+, HTTP \d+\)$/.test(error.message)
@@ -42,11 +42,19 @@ export function PangolinPanel() {
     } finally { setBusy(false); }
   }
   return <section aria-labelledby="pangolin-title">
-    <h2 id="pangolin-title">Connect to Pangolin</h2>
-    <p>Set <code>pangolin_api_url</code> in the app Configuration to your public HTTPS integration API URL ending in <code>/v1</code>, then restart.</p>
-    <p>Use an organization-scoped key with getOrg, listSites, listOrgDomains and listResources permissions. The key is used for this check only and is not saved. Don’t paste it into chat.</p>
+    <h2 id="pangolin-title">Pangolin setup and testing</h2>
+    <p>Use these read-only checks during first setup or troubleshooting. They do not connect your phone to HA or keep access running. Certificate issuance, replacement and expiry reminders do not need a Pangolin API key.</p>
+    <p>Set <strong>Pangolin API URL (Setup/Testing Only)</strong> in the app Configuration to your public HTTPS integration API URL ending in <code>/v1</code>, then restart.</p>
+    <p>For a basic connection test, use an organization-scoped key with Get Organization, List Sites, List Organization Domains and List Resources. The key is used for this check only and is not saved. Don’t paste it into chat.</p>
+    <ol>
+      <li>Set the integration API URL ending in /v1, save Configuration and restart.</li>
+      <li>Enter the organization ID and temporary API key below. Leave resource inspection off and run Test API connection.</li>
+      <li>Optionally inspect the prepared resource with the three extra read permissions. Review its hostname, CA trust, mTLS and target settings.</li>
+      <li>Test the protected hostname separately: no client certificate must be rejected; your enrolled client must work over cellular. API success alone does not prove mTLS enforcement.</li>
+    </ol>
+    <p>After setup, revoke the temporary key if you no longer need these checks. Keep the resource and CA trust configured in Pangolin.</p>
     <form onSubmit={check}>
-      <label className="check"><input type="checkbox" checked={inspect} onChange={event => { setInspect(event.target.checked); setResult(null); setResourceResult(null); }} disabled={busy} />Inspect a specific test resource</label>
+      <label className="check"><input type="checkbox" checked={inspect} onChange={event => { setInspect(event.target.checked); setResult(null); setResourceResult(null); }} disabled={busy} />Inspect resource configuration (optional)</label>
       {inspect && <>
         <p>Also enable Get Resource, Get Resource Policy and List Targets on the organization API key. This inspection only reads configuration.</p>
         <label>Resource identifier<input value={identifier} onChange={event => setIdentifier(event.target.value)} required maxLength={100} pattern="[A-Za-z0-9_-]+" autoComplete="off" disabled={busy} /></label>
@@ -54,7 +62,7 @@ export function PangolinPanel() {
       </>}
       <label>Organization ID<input value={orgId} onChange={event => setOrgId(event.target.value)} required maxLength={100} pattern="[A-Za-z0-9_-]+" autoComplete="off" disabled={busy} /></label>
       <label>API key<input type="password" value={key} onChange={event => setKey(event.target.value)} required maxLength={1024} autoComplete="off" spellCheck={false} disabled={busy} /></label>
-      <button disabled={busy}>{busy ? 'Checking…' : inspect ? 'Inspect resource' : 'Check Pangolin connection'}</button>
+      <button disabled={busy}>{busy ? 'Checking…' : inspect ? 'Inspect resource' : 'Test API connection'}</button>
     </form>
     <p role="status" aria-live="polite">{message}</p>
     {resourceResult && <ResourceInspection result={resourceResult} />}

@@ -5,7 +5,7 @@ import { checked, protectedPost } from './pki-api';
 const authoritySchema = z.object({ fingerprint: z.string(), serial: z.string(), issuedAt: z.string(), expiresAt: z.string() });
 const certificateSchema = z.object({ id: z.string().uuid(), name: z.string(), platform: z.string(), serial: z.string(), fingerprint: z.string(), issuedAt: z.string(), expiresAt: z.string(), exportStatus: z.string(), replacesId: z.string().uuid().nullable(), replacementConfirmedAt: z.string().nullable() });
 const inventorySchema = z.object({ authority: authoritySchema.nullable(), certificates: z.array(certificateSchema), reminders: z.object({ enabled: z.boolean(), deliveryFailed: z.boolean(), thresholds: z.array(z.number()) }) });
-const packageSchema = z.object({ id: z.string().uuid(), password: z.string(), token: z.string().regex(/^[a-f0-9]{64}$/), expiresAt: z.number(), profileDisplayName: z.string() });
+const packageSchema = z.object({ id: z.string().uuid(), password: z.string(), token: z.string().regex(/^[a-f0-9]{64}$/), expiresAt: z.number(), profileDisplayName: z.string(), zipFilename: z.string(), certificate: z.object({ platform: z.string() }) });
 type Package = z.infer<typeof packageSchema>;
 
 export function CertificatePanel() {
@@ -97,7 +97,7 @@ export function CertificatePanel() {
       if (!response.headers.get('content-type')?.startsWith(format === 'zip' ? 'application/zip' : format === 'mobileconfig' ? 'application/x-apple-aspen-config' : 'application/x-pkcs12')) throw new Error();
       const url = URL.createObjectURL(await response.blob());
       const anchor = document.createElement('a');
-      anchor.href = url; anchor.download = `ha-device-${bundle.id}.${format}`;
+      anchor.href = url; anchor.download = format === 'zip' ? bundle.zipFilename : format === 'p12' ? 'Home Assistant identity.p12' : 'Install for Safari.mobileconfig';
       document.body.append(anchor); anchor.click(); anchor.remove();
       setTimeout(() => URL.revokeObjectURL(url), 60_000);
       setDownloaded(true); await refresh();
@@ -110,7 +110,7 @@ export function CertificatePanel() {
     <p>Pangolin configuration is unchanged by these controls. Certificates grant remote access only when the server trusts their CA.</p>
     <p role="status" aria-live="polite">{message}</p>
     {enabled && inventory && <>
-      <p>Home Assistant expiry reminders: {inventory.reminders.enabled ? 'enabled (persistent notifications)' : 'off — enable_home_assistant_notifications in Configuration enables persistent notifications'}. Checks run at startup and hourly while this app is running, at 30, 14, 7 and 1 day, then expiry.</p>
+      <p>Home Assistant expiry reminders: {inventory.reminders.enabled ? 'enabled (persistent notifications)' : 'off — turn on Enable Home Assistant Notifications in Configuration'}. Checks run at startup and hourly while this app is running, at 30, 14, 7 and 1 day, then expiry.</p>
       {inventory.reminders.deliveryFailed && <p role="alert">A reminder could not be delivered. The app will retry; review certificate dates here.</p>}
       {!inventory.authority ? <>
         <p>The CA signing key is encrypted with a locally stored unlock secret. A full host or backup compromise can expose both.</p>
@@ -138,10 +138,9 @@ export function CertificatePanel() {
         <p>Expires {new Date(bundle.expiresAt).toLocaleTimeString()}. Keep the package and password separate.</p>
         <button onClick={() => setShowPassword(!showPassword)}>{showPassword ? 'Hide password' : 'Show package password'}</button>
         {showPassword && <p className="fingerprint"><code>{bundle.password}</code></p>}
-        <button onClick={() => download('p12')} disabled={busy || downloaded}>{downloaded ? 'Package downloaded' : 'Download .p12 once'}</button>
-        <button onClick={() => download('zip')} disabled={busy || downloaded}>Download iPhone ZIP once</button>
-        <button onClick={() => download('mobileconfig')} disabled={busy || downloaded}>Download Safari profile once</button>
-        <p>Choose one download. For both apps, choose iPhone ZIP: extract in Files, import the .p12 inside Companion, then open the .mobileconfig to install the named Safari identity in Settings. Safari-only users can choose the profile directly. Keep the password separate.</p>
+        {!['ios', 'ipados'].includes(bundle.certificate.platform) && <button onClick={() => download('p12')} disabled={busy || downloaded}>Download .p12 once</button>}
+        <button onClick={() => download('zip')} disabled={busy || downloaded}>{downloaded ? 'Installer downloaded' : 'Download mTLS installer ZIP'}</button>
+        <p>Extract the ZIP in Files. Import Home Assistant identity.p12 inside Companion. For Safari, open Install for Safari.mobileconfig and complete installation in Settings. You only need to install the file for the app you use. Keep the password separate.</p>
         <p>The profile contains only the encrypted identity; it has no password, MDM enrollment or root trust settings. It is unsigned, so iOS may show Not Signed or Unverified. Review the expected name and identity before installing. ZIP adds no encryption. Actual iOS profile installation still needs verification.</p>
         <p>Restarting the app or leaving this page can make a pending package unrecoverable. No reusable download link is created.</p>
       </aside>}
@@ -158,6 +157,7 @@ export function CertificatePanel() {
             <button disabled={busy || !tested[cert.id] || cert.exportStatus !== 'downloaded'} onClick={() => confirmReplacement(cert.id)}>Confirm replacement tested</button></>}</>}
             </td></tr>)}</tbody></table></div>
         <p>These are issuance records, not verified enrollments. Issuing a replacement does not invalidate an older certificate.</p>
+        <details><summary>Can I revoke a certificate?</summary><p>Individual certificate revocation is not supported by the inspected Pangolin shared-CA setup. Replace certificate creates a new identity but does not block the old one. Removing an identity from your phone also cannot revoke a copied identity.</p><p>For a lost device, disabling the affected resource in Pangolin is broad emergency containment. Restoring access safely can require a new CA and re-enrollment of every trusted device. Never remove the final trusted CA to block access: Pangolin turns mTLS off when no CA remains. CA rotation and remote revocation controls are not implemented here.</p></details>
       </>}
     </>}
   </section>;

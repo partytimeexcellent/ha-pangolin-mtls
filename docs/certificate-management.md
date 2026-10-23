@@ -4,6 +4,12 @@ The current prototype implements CA creation, device certificate issuance, publi
 
 Current issuance records include name/platform, serial, SHA-256 fingerprint, dates and package export status. Replacement records link the new identity to its older certificate and record an explicit owner test confirmation. A device may have multiple valid certificates after renewal. “Retired” means no further issuance/export is intended; it does not mean Pangolin rejects the existing certificate. Deleting a retired inventory entry cannot revoke a copied private key.
 
+## Can a certificate be revoked through the UI?
+
+No. The current app does not offer a revoke control because the inspected Pangolin shared-CA interface cannot deny one issued leaf by serial/fingerprint or enforce a CRL/OCSP check. Replacement, deleting a local record or removing an identity from a phone does not invalidate a copy elsewhere. This limitation is also shown beside the certificate inventory.
+
+For a lost/compromised identity, manually disabling the affected Pangolin resource is broad containment and interrupts every user of that resource. Recovering under a new shared CA requires re-enrolling legitimate devices, verifying new trust, then removing old trust while a valid CA remains. Existing connections/session behavior requires separate checks. This app does not automate that migration. Never remove the last trusted CA to block access: Pangolin turns mTLS off. [Pangolin mTLS documentation](https://docs.pangolin.net/manage/access-control/mtls), [inspected enforcement evidence](research.md#enforcement-details-and-consequences).
+
 ## Revocation choices
 
 | Approach | Effect and cost | Recommendation |
@@ -31,7 +37,7 @@ Restore must check issuer/key consistency, metadata version and live Pangolin tr
 
 ## Expiry reminders
 
-Expiry dates and days remaining are always visible in the certificate inventory, including the CA. To enable HA persistent notifications, set `enable_home_assistant_notifications: true` in app Configuration and restart. Certificate management must also be enabled. The app checks at startup and hourly while running, at 30, 14, 7 and 1 day before expiry and after expiry. If several thresholds passed while stopped, only the most urgent is sent. Delivery state survives restarts; a stable notification ID updates the existing notice. Failed delivery retries hourly and shows a dashboard warning. Dismissed notices are not recreated until a more urgent threshold is reached.
+Expiry dates and days remaining are always visible in the certificate inventory, including the CA. To enable HA persistent notifications, turn on **Enable Home Assistant Notifications** (`enable_home_assistant_notifications: true` in YAML) in app Configuration and restart. Certificate management must also be enabled. The app checks at startup and hourly while running, at 30, 14, 7 and 1 day before expiry and after expiry. If several thresholds passed while stopped, only the most urgent is sent. Delivery state survives restarts; a stable notification ID updates the existing notice. Failed delivery retries hourly and shows a dashboard warning. Dismissed notices are not recreated until a more urgent threshold is reached.
 
 These appear in the Home Assistant notification panel, not as phone push notifications. Disabling the option stops future delivery; it does not dismiss existing notices. Device names appear in notifications; avoid private information in labels. The app must remain running for checks. Keep **Start on boot** enabled if you want reminders after host restarts; this experimental app's default boot setting is manual. Persistent notifications are not an independent monitoring service or automatic renewal.
 
@@ -40,7 +46,7 @@ The app now requests Core API permission for this feature, even when the option 
 ## Replace a device certificate
 
 1. In the inventory, choose **Replace certificate** beside the intended device. Review its name, platform and lifetime, then choose **Issue replacement**. A fresh key and password are generated under the existing CA.
-2. Save the password separately and download either the encrypted `.p12` or **iPhone ZIP** within five minutes. The Safari profile is a third format; all formats consume the same download permission. Choose ZIP to receive both the P12 and named Safari profile for one identity. Import the new package inside the intended app; on iPhone use the [Companion import guide](ios-enrollment.md).
+2. Save the password separately and choose **Download mTLS installer ZIP** within five minutes. For iOS/iPadOS this is the only offered format: **iOS mTLS installer.zip** includes Home Assistant identity.p12 and Install for Safari.mobileconfig for the same identity. Import the new package inside the intended app; on iPhone use the [Companion import guide](ios-enrollment.md).
 3. If the same identity is installed in Safari and Companion on one iPhone, import the replacement into both places using their separate installation paths. Close/reopen each intended client and test the protected external hostname over cellular or another external network, avoiding a local fallback or existing connection. Normal Home Assistant login remains required.
 4. Under the replacement's inventory row, check **I imported this replacement and tested access**, then choose **Confirm replacement tested**. This records your observation and suppresses future reminders for the older record. It does not revoke the old identity or dismiss previously delivered notifications; dismiss those in HA.
 

@@ -1,6 +1,6 @@
 # Install HA Pangolin Access and connect iOS Companion
 
-This tutorial covers the working path in `0.1.0-dev.7`: create client certificates in the Home Assistant app, inspect Pangolin through its integration API, configure a dedicated mTLS resource manually, and import a device identity into Companion. The API instructions were checked against Pangolin 1.25.2. Later versions may change screens or contracts.
+This tutorial covers the working path in `0.1.0-dev.8`: create client certificates in the Home Assistant app, inspect Pangolin through its integration API, configure a dedicated mTLS resource manually, and import a device identity into Companion. The API instructions were checked against Pangolin 1.25.2. Later versions may change screens or contracts.
 
 This is an experimental prototype, not a production release. Initial client, cellular, restart and fresh TLS rejection checks have passed within the scope in [recorded results](phase-2-results.md). Backup restoration, rotation and broader compatibility remain separate release gates.
 
@@ -135,6 +135,8 @@ The value to enter in our app is exactly the HTTPS base ending in **`/v1`**, wit
 
 ## 4. Create one organization API key with the correct reads
 
+For a short setup/troubleshooting routine, see [Pangolin connection checks](pangolin-connection-check.md). Daily access and local certificate management do not require a Pangolin API key.
+
 Create the key within the organization containing your new resource. Enable all seven permissions now to avoid adding them in separate troubleshooting rounds:
 
 | Category | Exact permission label | Action |
@@ -187,13 +189,13 @@ At this stage, findings for **existing trust**, **mTLS already on** and **target
 
 ## 7. Issue and import a device identity
 
-In the HA app, enter a device name, select iOS/iPadOS and choose a lifetime. The default is 90 days; supported bounds are 1–365 days within the CA's remaining validity. Select **Issue certificate**, save its separately displayed password, and select **Download iPhone ZIP once** within five minutes (or the bare `.p12` option when an archive is unnecessary).
+In the HA app, enter a device name, select iOS/iPadOS and choose a lifetime. The default is 90 days; supported bounds are 1–365 days within the CA's remaining validity. Select **Issue certificate**, save its separately displayed password, and select **Download mTLS installer ZIP** within five minutes. iOS/iPadOS offer only **iOS mTLS installer.zip**, containing Home Assistant identity.p12 and Install for Safari.mobileconfig.
 
 A download can be redeemed once. Expiry, restart or a consumed/interrupted download does not provide a permanent recovery URL. Another issuance creates a fresh identity; it does not revoke the earlier one. Current limits are five pending packages and 100 issuance records.
 
 For Mac-to-iPhone transfer, use the ZIP method from the start:
 
-1. Use the app’s **iPhone ZIP** download. If you already downloaded a bare `.p12`, right-click it in Finder and choose **Compress** instead.
+1. Choose **Download mTLS installer ZIP** to receive **iOS mTLS installer.zip**.
 2. AirDrop the ZIP and save/open it in **Files** on the iPhone.
 3. In Files, tap the ZIP to extract its contents.
 4. Leave the extracted `.p12` there. Open Companion's own certificate importer and select the file from its picker.
@@ -205,7 +207,7 @@ Companion's inspected source supports certificate selection during onboarding an
 
 ### Optional: Safari on the same iPhone
 
-You can use the same device `.p12` for both Safari and Companion when both should have the same access. The dev.7 **iPhone ZIP** contains both the `.p12` for Companion and a named `.mobileconfig` for Safari. After importing the `.p12` inside Companion, open or AirDrop the `.mobileconfig` and complete installation through **Settings → Profile Downloaded** or **General → VPN & Device Management**. The two clients require separate imports; certificate installation does not enroll the phone in MDM. For Safari-only use, choose **Download Safari profile once**. Its title uses **Home Assistant mTLS - [device name] - expires [month year]** with the actual certificate expiry. The profile omits the password, which you enter separately. It is unsigned and installs only the identity; review the expected name and contents before approving it. Older installed identities are not renamed automatically.
+You can use the same device `.p12` for both Safari and Companion when both should have the same access. The **iOS mTLS installer.zip** contains both the `.p12` for Companion and a named `.mobileconfig` for Safari. After importing the `.p12` inside Companion, open or AirDrop the `.mobileconfig` and complete installation through **Settings → Profile Downloaded** or **General → VPN & Device Management**. The two clients require separate imports; certificate installation does not enroll the phone in MDM. For Safari-only use, extract and install just **Install for Safari.mobileconfig** from the ZIP. Its title uses **Home Assistant mTLS - [device name] - expires [month year]** with the actual certificate expiry. The profile omits the password, which you enter separately. It is unsigned and installs only the identity; review the expected name and contents before approving it. Older installed identities are not renamed automatically. The [iOS guide explains the Not Signed label](ios-enrollment.md#why-does-ios-say-not-signed); it describes the wrapper, not whether the client certificate has a CA signature.
 
 Keep the downloaded file until both imports succeed; the app still permits only one download. One shared identity has one private key and expiry date: compromise of either copy affects that identity, and the certificate alone cannot distinguish the two clients. It is not hardware-bound, so use a fresh identity for a different physical device. When replacing it, update and test both installations before confirming replacement.
 
@@ -247,6 +249,6 @@ For updates, read the changelog, take a protected backup, update in place and co
 
 ## Optional reminders and future replacements
 
-With dev.6, enable `enable_home_assistant_notifications` in app Configuration and restart if you want expiry reminders in the HA notification panel. Enable **Start on boot** to keep checks running after host restarts. Phone push delivery is not included. Existing certificates are tracked without recreating them. For the replacement workflow, notification behavior and pre-update backup instructions, see [certificate management](certificate-management.md#expiry-reminders).
+With dev.6, turn on **Enable Home Assistant Notifications** (`enable_home_assistant_notifications` in YAML) in app Configuration and restart if you want expiry reminders in the HA notification panel. Enable **Start on boot** to keep checks running after host restarts. Phone push delivery is not included. Existing certificates are tracked without recreating them. For the replacement workflow, notification behavior and pre-update backup instructions, see [certificate management](certificate-management.md#expiry-reminders).
 
-The app can now download the encrypted enrollment package as **iPhone ZIP**, avoiding the manual Finder compression step. Choose ZIP, bare P12 or the Safari profile once and keep the password separate. Pangolin setup, CA upload and initial test-resource activation are still manual. The administrator ID allowlist is still required; a user picker has not been added in this increment.
+The app can now download the encrypted enrollment package as **iOS mTLS installer.zip**, avoiding the manual Finder compression step. For iOS/iPadOS, use the single installer ZIP download and keep the password separate. Pangolin setup, CA upload and initial test-resource activation are still manual. The administrator ID allowlist is still required; a user picker has not been added in this increment.

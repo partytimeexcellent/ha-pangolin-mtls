@@ -1,3 +1,4 @@
+import { downloadFilename } from './download-names.js';
 import { randomBytes, timingSafeEqual } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import Fastify, { type FastifyReply, type FastifyRequest } from 'fastify';
@@ -191,8 +192,10 @@ export async function createApp(options: Options, settings: {
     const params = z.strictObject({ id: z.string().uuid() }).safeParse(request.params);
     const body = z.strictObject({ token: z.string().regex(/^[a-f0-9]{64}$/), format: z.enum(['p12', 'zip', 'mobileconfig']).default('p12') }).safeParse(request.body);
     if (!params.success || !body.success) throw new PkiError('EXPORT_UNAVAILABLE', 410);
-    const data = requirePki().download(params.data.id, body.data.token, header(request, 'x-remote-user-id')!, body.data.format);
-    return reply.type(body.data.format === 'zip' ? 'application/zip' : body.data.format === 'mobileconfig' ? 'application/x-apple-aspen-config' : 'application/x-pkcs12').header('content-disposition', `attachment; filename="ha-device-${params.data.id}.${body.data.format}"`).send(data);
+    const service = requirePki();
+    const platform = service.inventory().find((item) => item.id === params.data.id)?.platform ?? 'other';
+    const data = service.download(params.data.id, body.data.token, header(request, 'x-remote-user-id')!, body.data.format);
+    return reply.type(body.data.format === 'zip' ? 'application/zip' : body.data.format === 'mobileconfig' ? 'application/x-apple-aspen-config' : 'application/x-pkcs12').header('content-disposition', `attachment; filename="${downloadFilename(platform, body.data.format)}"`).send(data);
   });
 
   await app.register(staticFiles, {

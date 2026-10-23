@@ -6,7 +6,7 @@ Use this page after [preparing the CA and protected Pangolin resource](installat
 
 Open the HA app through an already working local/management connection as an allowlisted administrator. Under **Certificate authority and devices → Issue a device identity**, enter the device name, choose iOS/iPadOS and a lifetime, then select **Issue certificate**.
 
-Save the separately displayed password and select **Download iPhone ZIP once** (or **Download .p12 once** if no archive is needed) before its five-minute expiry. Use a new identity for each device. Do not recreate the installation's CA or reconfigure Pangolin for each enrollment.
+Save the separately displayed password and select **Download mTLS installer ZIP** before its five-minute expiry. Use a new identity for each device. Do not recreate the installation's CA or reconfigure Pangolin for each enrollment.
 
 The package contains the device private key, its certificate and the public issuer certificate. It is not the public `.pem` that Pangolin trusts. Keep the package/password private and separate during transfer. A downloaded package is not proof of installation.
 
@@ -15,22 +15,22 @@ The package contains the device private key, its certificate and the public issu
 | Intended client | Installation path |
 | --- | --- |
 | Companion | Import the `.p12` inside Companion, using its Files picker. ZIP transfer avoids the unwanted Settings handoff. |
-| Safari | Choose **Download Safari profile once**, or use the `.mobileconfig` included in the iPhone ZIP, and complete installation in iOS Settings. |
-| Both on the same iPhone | Choose **iPhone ZIP**: import its `.p12` inside Companion, then install its named `.mobileconfig` in Settings. Both contain the same encrypted identity and use the same password. |
+| Safari | Download the installer ZIP and use Install for Safari.mobileconfig to complete installation in iOS Settings. |
+| Both on the same iPhone | Download the installer ZIP: import Home Assistant identity.p12 inside Companion, then install Install for Safari.mobileconfig in Settings. Both contain the same encrypted identity and use the same password. |
 
 Using one identity for Safari and Companion on your own physical device is a reasonable default when both should have the same access. iOS stores the identity separately for Apple apps and for Companion; installing it in one place does not automatically install it in the other. [Apple explains keychain access](https://developer.apple.com/library/archive/qa/qa1745/_index.html).
 
 Both installations contain the same private key. Compromise of either copy compromises that identity, and the certificate alone cannot distinguish Safari traffic from Companion traffic. The package is not hardware-bound: anyone with the file and password could install it elsewhere. Use a fresh identity for each additional physical device. Separate app identities are an option when you need distinct certificate records, but the current shared-CA setup still does not offer individual certificate revocation.
 
-Download once and keep the encrypted package available only until both intended imports and connection checks succeed. The ZIP, P12 and Safari profile buttons share one single-use download permission; you do not need a second download to install the same file twice. If you already deleted the downloaded file after importing into Companion, issue a replacement and update both installations; the app cannot recover that earlier package or password.
+Download once and keep the encrypted package available only until both intended imports and connection checks succeed. The installer ZIP has one single-use download permission; you do not need a second download to install the same file twice. If you already deleted the downloaded file after importing into Companion, issue a replacement and update both installations; the app cannot recover that earlier package or password.
 
 ## Transfer a ZIP to avoid the iOS Settings handoff
 
 AirDropping a bare `.p12` may open iOS Settings for system-wide identity installation. Use an archive when transferring from a Mac:
 
-1. Download **iPhone ZIP** directly from the app. If you already chose the bare `.p12` instead, right-click it in Finder and choose **Compress**. All app download buttons share one single-use permission.
+1. Choose **Download mTLS installer ZIP**. For iOS/iPadOS the app offers only this download, named **iOS mTLS installer.zip**.
 2. AirDrop the resulting `.zip` to the iPhone/iPad and save/open it in **Files**.
-3. Tap the ZIP in Files to extract it. In dev.7, it contains a `.p12` for Companion and a `.mobileconfig` for Safari. Both wrap the same identity. A ZIP manually made from a bare P12 contains only that file.
+3. Tap the ZIP in Files to extract it. It contains **Home Assistant identity.p12** for Companion and **Install for Safari.mobileconfig** for Safari. Both wrap the same identity. Install only the file for the client you use, or both for both clients.
 4. Leave the `.p12` in Files; select it from **inside Companion's file importer** rather than tapping it in Files.
 
 [Apple explains ZIP extraction in Files](https://support.apple.com/en-us/102532). The ZIP is a transfer wrapper, not extra encryption; the `.p12` already has its own password protection.
@@ -50,7 +50,7 @@ No global “Always Trust” setting for the client CA is needed. The server's p
 ## Install for Safari through iOS Settings
 
 1. Use an existing working local/management connection to obtain the identity. Do not rely on the protected hostname to download your first certificate before it is installed.
-2. Choose **Download Safari profile once** for Safari only, or **iPhone ZIP** for both clients. For the ZIP, extract it, import the `.p12` inside Companion, then open or AirDrop the `.mobileconfig` to start the Settings installation flow. If your installed iOS version does not hand the extracted profile to Settings, transfer that same profile separately from your Mac; do not issue another identity just to retry transfer. A bare `.p12` can still be installed, but iOS may title it generically as “Identity Certificate.”
+2. Download **iOS mTLS installer.zip** and extract it. Open or AirDrop **Install for Safari.mobileconfig** to start the Settings installation flow. If you also use Companion, import **Home Assistant identity.p12** through its picker. If your installed iOS version does not hand the extracted profile to Settings, transfer that same profile separately from your Mac; do not issue another identity just to retry transfer. A bare `.p12` can still be installed, but iOS may title it generically as “Identity Certificate.”
 3. Open **Settings → Profile Downloaded**, or **Settings → General → VPN & Device Management**, and select the pending identity/profile. Review its contents, choose **Install**, and enter the device passcode and package password when requested. This installs a certificate identity; it does not enroll the phone in a device management service. Installation requires your approval, rather than happening silently. [Apple's certificate distribution guide](https://support.apple.com/en-ca/guide/deployment/depcdc9a6a3f/web), [profile installation instructions](https://support.apple.com/en-gb/102400).
 4. With the prepared resource active and mTLS enabled, open the protected HA HTTPS hostname in Safari. Select or approve the identity if Safari prompts, then complete normal HA login.
 5. Test Safari separately over cellular: open a dashboard and check a harmless control. A successful Companion connection does not establish Safari success. Record the Safari result separately; this project's Safari workflow remains unverified until tested.
@@ -63,7 +63,15 @@ The named Safari profile uses **Home Assistant mTLS - [device name] - expires [m
 
 The `.mobileconfig` contains one encrypted PKCS#12 identity, with no password, MDM enrollment, restrictions or separate root-trust payload. Enter the separately displayed package password during installation. The profile itself is unsigned, so iOS may show **Not Signed** or **Unverified**. Review its expected name and single identity payload before approving it; the profile makes no claim of verified publisher identity. These properties follow [Apple's profile schema](https://github.com/apple/device-management/blob/release/mdm/profiles/TopLevel.yaml) and [PKCS#12 payload schema](https://github.com/apple/device-management/blob/release/mdm/profiles/com.apple.security.pkcs12.yaml). Profile display and installation with this project still require a real iOS check.
 
-All three formats share one five-minute, single-use download permission. The ZIP is the way to get both files in one download; it adds no encryption. Already installed profiles are not renamed by an app update. If you no longer have the original package, issue a replacement, install and test it in each intended client, and only then remove the obsolete Settings profile. A new certificate's profile has a distinct identifier and does not silently overwrite or remove older profiles. Nothing changes in Pangolin for a replacement under the existing trusted CA.
+For iOS/iPadOS, the ZIP is the only offered format. It contains both files under one five-minute, single-use download permission and adds no encryption. Older builds and API clients may still support individual file formats. Already installed profiles are not renamed by an app update. If you no longer have the original package, issue a replacement, install and test it in each intended client, and only then remove the obsolete Settings profile. A new certificate's profile has a distinct identifier and does not silently overwrite or remove older profiles. Nothing changes in Pangolin for a replacement under the existing trusted CA.
+
+## Why does iOS say “Not Signed”?
+
+This refers to the configuration-profile wrapper, not the client certificate inside it. The current app deliberately exports an unsigned `.mobileconfig`; the enclosed client certificate is signed by your CA and its private key remains inside a password-encrypted P12. The profile contains no P12 password. A profile signature would authenticate the wrapper's origin and integrity; it would not add encryption or make an otherwise untrusted issuer trusted automatically.
+
+An Apple Developer Program account is not inherently required to sign a configuration profile. Apple Configurator supports **File → Sign Profile** with a suitable certificate/private-key identity. For iOS to trust the signer, its certificate chain must also be trusted and suitable for profile signing. A self-signed signature alone does not guarantee a **Verified** label. [Apple Configurator signing instructions](https://support.apple.com/en-hk/guide/apple-configurator-mac/pmd85719196/mac).
+
+Automatic profile signing is not implemented. Adding it would require a separate signing identity, protected key storage, a defined trust/distribution approach and real-device validation. The current app does not reuse a public web-server private key or embed a signing key in a download. Review the expected profile name and single identity payload before manual installation; signing and encrypted identity protection are different controls.
 
 ## Confirm the intended connection
 

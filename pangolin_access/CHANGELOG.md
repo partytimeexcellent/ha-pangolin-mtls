@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.0-dev.8
+
+- Offer only the installer ZIP for issued iOS/iPadOS identities, named `iOS mTLS installer.zip`. Use readable internal filenames for the Companion identity and named Safari profile. Preserve the protected one-use API formats for existing clients.
+- Mark Pangolin API tools as optional setup/testing checks; explain four basic read permissions, three optional inspection reads and zero for daily operation. Add a short repeatable guide.
+- Add Home Assistant English configuration labels/descriptions without renaming stored option keys.
+- Explain individual revocation limits beside the inventory and in the guide. Replacement is not revocation; no remote trust/activation controls are added.
+- Document the authenticated administrator/user-list/persistence work needed for the future user picker. Keep the explicit ID allowlist unchanged.
+
 ## 0.1.0-dev.7
 
 - Add a named Safari `.mobileconfig` download using “Home Assistant mTLS - [device name] - expires [actual UTC month/year]”. Preview the generated title in the temporary package panel.
