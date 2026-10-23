@@ -76,3 +76,19 @@ Local typecheck, production build and 31 automated tests passed. Added checks co
 A local Chromium check with synthetic ingress and disposable API responses passed form submission, hidden/cleared key input, result rendering, mobile width and absence of browser storage. A credential-free request to GitHub also exercised real public DNS pinning and verified HTTPS transport, yielding the expected upstream rejection; it did not contact production Pangolin. Dependency audit reported zero known vulnerabilities at check time.
 
 [GitHub Actions run 39914535653](https://github.com/partytimeexcellent/ha-pangolin-mtls/actions/runs/39914535653) passed for commit `4fa768d6c69f86ac5656d49c60762affdc9c49fc`: typecheck/build, all 31 tests, dependency audit, and native amd64/aarch64 container builds and runtime smoke checks. Production Pangolin connectivity and Apple import remain unverified.
+
+## Additional sanitized owner-reported result
+
+| Check | Result |
+| --- | --- |
+| Read-only Pangolin connection check | PASS |
+
+Published under the owner's existing permission for sanitized pass/fail results only. No resource identifier, hostname, key, identity or detailed production configuration is included.
+
+## Selected-resource increment — 0.1.0-dev.5
+
+Added explicit read-only resource selection and configuration inspection. The owner supplied a separate test resource and confirmed adding read permissions; no remote mutation or activation is authorized by this increment. Source/contract details and limitations are in research.md and the app setup guide. All validation below uses disposable fixtures, not the owner's resource.
+
+Added operation-stage error diagnostics and moved Fastify error-handler registration before route/plugin setup after an API regression test showed earlier routes could retain Fastify's default error formatter. The regression verifies unexpected failures are redacted and fixed permission failures preserve the operation stage. No raw upstream text is returned.
+
+Local typecheck/build and all 40 automated tests passed. Resource-specific fixtures cover exact identity matching, ambiguous/incomplete searches, wrong organization/hostname, shared policies, other auth/rules, existing targets/trust, hostname matches, target truncation, changed references/resource state, cross-resource target rejection, failure-stage redaction, and API authorization/HTTPS/default-configuration boundaries. A local Chromium simulation passed protected form submission, cleared/hidden key input, normal findings, shared-policy warning, metadata redaction, mobile width and absence of browser storage. The dependency audit reported zero known vulnerabilities at check time. These are local fixture results; the selected production resource has not been inspected by this agent.

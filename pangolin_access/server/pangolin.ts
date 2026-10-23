@@ -4,8 +4,10 @@ import { BlockList, isIP } from 'node:net';
 import { z } from 'zod';
 
 export class PangolinError extends Error {
-  constructor(public code: string, public statusCode = 502) { super(code); }
+  constructor(public code: string, public statusCode = 502, public stage?: PangolinStage) { super(code); }
 }
+export type PangolinStage = 'specification' | 'organization' | 'sites' | 'domains' | 'resources' |
+  'resource' | 'policies' | 'targets' | 'trust' | 'hostname' | 'recheck';
 
 export const apiUrlSchema = z.string().max(300).transform((value, ctx) => {
   try {
@@ -106,20 +108,25 @@ const mtlsRoutes = [
 ] as const;
 
 export async function inspectPangolin(read: ReadJson, orgId: string) {
+  let stage: PangolinStage = 'specification';
   try {
     const spec = z.object({ openapi: z.string().regex(/^3\./), paths: z.record(z.string(), z.record(z.string(), z.unknown())) }).parse(await read('/openapi.json', false));
     if (paths.some(path => !spec.paths[path]?.get)) throw new PangolinError('PANGOLIN_CONTRACT');
     const prefix = `/org/${encodeURIComponent(orgId)}`;
+    stage = 'organization';
     const organization = org.parse(await read(prefix, true)).data.org;
     if (organization.orgId !== orgId) throw new PangolinError('PANGOLIN_CONTRACT');
+    stage = 'sites';
     const siteData = sites.parse(await read(`${prefix}/sites?pageSize=20&page=1`, true)).data;
+    stage = 'domains';
     const domainData = domains.parse(await read(`${prefix}/domains?limit=20&offset=0`, true)).data;
+    stage = 'resources';
     const resourceData = resources.parse(await read(`${prefix}/public-resources?pageSize=20&page=1`, true)).data;
     return { checkedAt: new Date().toISOString(), organization, sites: siteData, domains: domainData, resources: resourceData,
       mtlsRoutesAdvertised: mtlsRoutes.every(([path, method]) => Boolean(spec.paths[path]?.[method])),
       scope: 'read-only-first-page' as const };
   } catch (error) {
-    if (error instanceof PangolinError) throw error;
-    throw new PangolinError('PANGOLIN_CONTRACT');
+    if (error instanceof PangolinError) throw new PangolinError(error.code, error.statusCode, stage);
+    throw new PangolinError('PANGOLIN_CONTRACT', 502, stage);
   }
 }

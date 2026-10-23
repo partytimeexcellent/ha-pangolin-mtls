@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.0-dev.5
+
+- Add read-only selected-resource inspection by exact organization, identifier and expected hostname.
+- Read resource settings, inline/shared policies, bounded targets and policy CA trust; flag shared policies, existing targets/trust, authentication/rules and hostname matches for review.
+- Require Get Resource, Get Resource Policy and List Targets read permissions in addition to the connection-check permissions. No write permission or remote mutation.
+- Show fixed failing-operation labels for API errors. Register error redaction before route/plugin setup so early routes use the intended handler.
+- Keep credentials request-scoped, network destinations pinned and all checks explicit. No automatic adoption, certificate upload, activation or TLS-enforcement claim.
+
 ## 0.1.0-dev.4
 
 - Add an explicit read-only Pangolin integration API check: deployed OpenAPI, organization, and first-page sites/domains/resources.

@@ -1,5 +1,5 @@
 name: HA Pangolin Access
-version: "0.1.0-dev.4"
+version: "0.1.0-dev.5"
 slug: pangolin_access
 description: "Development prototype for local client certificates and Pangolin mTLS planning"
 url: https://github.com/partytimeexcellent/ha-pangolin-mtls/tree/main/pangolin_access

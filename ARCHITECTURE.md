@@ -113,3 +113,7 @@ docs/
 ```
 
 Keep the build context compatible with Supervisor's app-directory builds; application source and lockfile live inside that directory. The current manifest builds locally and deliberately has no placeholder owner, repository URL, maintainer or published image.
+
+## Read-only resource inspection increment
+
+Dev.5 resolves an exact resource identifier through the supported integration resource-list query, validates the numeric resource's organization and expected hostname, then reads its inline/shared policies, bounded target list and policy CA metadata. It checks a bounded exact-host resource search and rereads selected resource fields for concurrent changes. Results are volatile browser summaries; there is no persisted adoption/binding, remote write or certificate upload. Shared policy assignments and incomplete inventories require manual review. Redirects, wildcard overlaps, manual routers, connectivity and mTLS handshakes remain separate gates. See the app setup guide for permissions and bounds.

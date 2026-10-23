@@ -8,6 +8,7 @@ import type { Options } from './config.js';
 import { PkiService } from './pki.js';
 import { PkiError } from './openssl.js';
 import { inspectPangolin, publicReader, PangolinError, type ReadJson } from './pangolin.js';
+import { inspectResource, resourceSelectionSchema } from './resource-inspection.js';
 
 const peer = '172.30.32.2';
 const sessionLifetime = 5 * 60_000;
@@ -51,6 +52,16 @@ export async function createApp(options: Options, settings: {
   const app = Fastify({
     logger: false, trustProxy: false, bodyLimit: 4096,
     requestTimeout: 10_000, connectionTimeout: 10_000,
+  });
+
+  app.setErrorHandler(async (_error, _request, reply) => {
+    if (_error instanceof PangolinError) return reply.code(_error.statusCode).send({ code: _error.code, stage: _error.stage, error: 'Pangolin check could not be completed.' });
+    if (_error instanceof PkiError) return reply.code(_error.statusCode).send({ code: _error.code, error: 'Certificate operation could not be completed.' });
+    // Do not echo schema inputs, malformed request bodies or upstream errors.
+    const status = _error instanceof Error && 'statusCode' in _error && typeof _error.statusCode === 'number'
+      ? _error.statusCode : undefined;
+    return reply.code(status && status >= 400 && status < 500 ? status : 500)
+      .send({ code: status === 429 ? 'RATE_LIMITED' : 'REQUEST_FAILED', error: status === 429 ? 'Too many requests.' : 'Request could not be processed.' });
   });
 
   app.addHook('onRequest', async (request, reply) => {
@@ -124,21 +135,24 @@ export async function createApp(options: Options, settings: {
     return { authorized: true, signingEnabled: Boolean(pki) };
   });
 
-  app.post('/api/pangolin/check', { config: { rateLimit: { max: 2, timeWindow: 60_000 } } }, async (request) => {
+  for (const resourceCheck of [false, true]) app.post(resourceCheck ? '/api/pangolin/resource-check' : '/api/pangolin/check', { config: { rateLimit: { max: 2, timeWindow: 60_000 } } }, async (request) => {
     if (!options.home_assistant_origin.startsWith('https://')) throw new PangolinError('HTTPS_REQUIRED', 403);
     if (!options.pangolin_api_url) throw new PangolinError('PANGOLIN_URL_REQUIRED', 400);
-    const input = z.strictObject({ orgId: z.string().min(1).max(100).regex(/^[A-Za-z0-9_-]+$/),
-      apiKey: z.string().min(1).max(1024).regex(/^[\x21-\x7e]+$/) }).safeParse(request.body);
+    const credentials = z.strictObject({ orgId: z.string().min(1).max(100).regex(/^[A-Za-z0-9_-]+$/),
+      apiKey: z.string().min(1).max(1024).regex(/^[\x21-\x7e]+$/) });
+    const input = (resourceCheck ? credentials.extend(resourceSelectionSchema.shape) : credentials).safeParse(request.body);
     // No persistence or logging of this request-scoped credential.
     request.body = undefined;
     if (!input.success) throw new PangolinError('PANGOLIN_INPUT', 400);
     if (pangolinBusy) throw new PangolinError('PANGOLIN_BUSY', 409);
     pangolinBusy = true;
-    request.raw.socket.setTimeout?.(35_000);
+    const deadline = resourceCheck ? 45_000 : 30_000;
+    request.raw.socket.setTimeout?.(deadline + 5_000);
     const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 30_000);
+    const timer = setTimeout(() => controller.abort(), deadline);
     try {
       const read = await (settings.pangolinReader ?? publicReader)(options.pangolin_api_url, input.data.apiKey, controller.signal);
+      if (resourceCheck) return await inspectResource(read, input.data.orgId, resourceSelectionSchema.parse(input.data));
       return await inspectPangolin(read, input.data.orgId);
     } finally { clearTimeout(timer); controller.abort(); input.data.apiKey = ''; pangolinBusy = false; }
   });
@@ -178,15 +192,6 @@ export async function createApp(options: Options, settings: {
     cacheControl: false, etag: false, lastModified: false,
   });
   app.setNotFoundHandler(async (_request, reply) => reply.code(404).send({ code: 'API_NOT_FOUND', error: 'Not found.' }));
-  app.setErrorHandler(async (_error, _request, reply) => {
-    if (_error instanceof PangolinError) return reply.code(_error.statusCode).send({ code: _error.code, error: 'Pangolin check could not be completed.' });
-    if (_error instanceof PkiError) return reply.code(_error.statusCode).send({ code: _error.code, error: 'Certificate operation could not be completed.' });
-    // Do not echo schema inputs, malformed request bodies or upstream errors.
-    const status = _error instanceof Error && 'statusCode' in _error && typeof _error.statusCode === 'number'
-      ? _error.statusCode : undefined;
-    return reply.code(status && status >= 400 && status < 500 ? status : 500)
-      .send({ code: status === 429 ? 'RATE_LIMITED' : 'REQUEST_FAILED', error: status === 429 ? 'Too many requests.' : 'Request could not be processed.' });
-  });
   app.addHook('onClose', async () => { sessions.clear(); await settings.pki?.close(); });
   return app;
 }

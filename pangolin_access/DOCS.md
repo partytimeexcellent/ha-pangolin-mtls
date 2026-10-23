@@ -64,3 +64,21 @@ The image uses a pinned official Node Debian image, packaged OpenSSL and Supervi
 5. A pass means the deployed spec advertises the read routes and all four scoped reads matched the expected response shapes. The dashboard shows only the first 20 entries per list and the reported total; it does not claim a complete inventory. mTLS route advertisement is not proof of write permissions, shared-policy safety, site-to-HA reachability or TLS enforcement.
 
 No certificate upload, resource/target edit, trust change or activation is implemented. No automatic requests run at startup. Checks use a 30-second total deadline, five-second socket inactivity limit, two-megabyte response limit, one active check and two attempts per administrator per minute. Failed checks show fixed codes without upstream response bodies. Share only the displayed result/code. A future step must inspect the selected resource’s effective policies, trust and targets before proposing any changes.
+
+## Inspect a dedicated test resource (0.1.0-dev.5)
+
+Update to dev.5, restart, reopen the Web UI and confirm the build number. Preserve your existing app data and API URL configuration. On the organization API key, keep the four connection permissions and add these three **read** permissions:
+
+| Category | Permission |
+| --- | --- |
+| Resource | Get Resource |
+| Resource Policy | Get Resource Policy |
+| Target | List Targets |
+
+Select **Inspect a specific test resource** in Connect to Pangolin. Enter the exact resource identifier and expected hostname (hostname only, no scheme/path), then your organization ID and API key. Select **Inspect resource**. The key is cleared from the input on submission and not persisted. The backend remains limited to GET requests; the browser submits the key through the existing protected POST.
+
+Inspection validates the deployed route advertisement, organization, an exact identifier match from a complete bounded search, and resource identity/hostname before any policy/target/trust reads. It reads policy authentication flags without returning policy users, emails, rules, header values or credentials. It reads at most 20 targets and 20 policy certificate metadata records, searches public resources for the exact hostname, and rereads selected resource fields for changes. The inspection has a 45-second total deadline, five-second socket inactivity deadline, two-megabyte response limit, one shared active-check slot, and two attempts per operation per administrator per minute. Permission/network/contract failures identify a fixed operation label without echoing URLs, identifiers, keys or upstream bodies.
+
+Review findings are not a safety certification. Enabled resources, existing targets/trust, shared policies, other authentication/rules, incomplete target/hostname results and same-host resource matches are flagged. Shared policies require manual review; displayed shared-policy trust does not inventory legacy resource-level fallback trust. The inline-policy CA list uses Get Resource Policy through `/public-resource-policy/{id}/mtls/certificates`; Pangolin 1.25.2's key editor does not expose its separate resource-CA-list action. A resource without a readable default policy stops the inspection instead of assuming empty trust.
+
+Reads are not transactional and the final resource reread cannot detect every concurrent policy/target/trust change. Hostname searches do not inventory wildcard overlaps, redirects, manual Traefik configuration or other organizations. No target connection or TLS handshake is attempted. Even a report with no findings still requires configuration review and positive/negative live tests before activation. This version cannot adopt a resource, change any remote setting, upload CA trust, or enable remote access. Share the review findings or fixed failure message, not the API key or full diagnostic responses.

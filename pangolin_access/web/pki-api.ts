@@ -1,6 +1,10 @@
 import { z } from 'zod';
 
 const errors: Record<string, string> = {
+  PANGOLIN_SEARCH_INCOMPLETE: 'The resource search exceeded the bounded result limit. No resource was selected.',
+  PANGOLIN_SELECTION_NOT_FOUND: 'No unique exact resource identifier was found in this organization.',
+  PANGOLIN_SELECTION_MISMATCH: 'The resource organization, identifier or hostname did not match your selection.',
+  PANGOLIN_SNAPSHOT_CHANGED: 'The resource changed or inconsistent results were returned during inspection. Check Pangolin and try again.',
   PANGOLIN_URL_REQUIRED: 'Set pangolin_api_url in the app Configuration to your HTTPS integration API URL ending in /v1, then restart.',
   PANGOLIN_INPUT: 'Enter the organization ID and API key.',
   PANGOLIN_BUSY: 'Another Pangolin check is running. Wait and try again.',
@@ -31,12 +35,20 @@ const errors: Record<string, string> = {
   RATE_LIMITED: 'Too many requests. Wait one minute and try again.',
   CRYPTO_FAILED: 'OpenSSL could not complete the operation. No package is available.',
 };
+const pangolinStages: Record<string, string> = {
+  specification: 'API specification', organization: 'Organization (Get Organization)', sites: 'Sites (List Sites)',
+  domains: 'Domains (List Organization Domains)', resources: 'Resource search (List Resources)',
+  resource: 'Resource details (Get Resource)', policies: 'Policies (Get Resource Policy)', targets: 'Targets (List Targets)',
+  trust: 'Policy certificate trust (Get Resource Policy)', hostname: 'Hostname search (List Resources)', recheck: 'Resource recheck (Get Resource)',
+};
 
 export async function checked(response: Response) {
   if (response.ok) return response;
   const data = await response.json().catch(() => null);
   const code = typeof data?.code === 'string' && Object.hasOwn(errors, data.code) ? data.code as string : 'REQUEST_FAILED';
-  throw new Error(`${errors[code] ?? 'The certificate request failed.'} (${code}, HTTP ${response.status})`);
+  const stage = code.startsWith('PANGOLIN_') && typeof data?.stage === 'string' && Object.hasOwn(pangolinStages, data.stage)
+    ? `${pangolinStages[data.stage]}: ` : '';
+  throw new Error(`${stage}${errors[code] ?? 'The request failed.'} (${code}, HTTP ${response.status})`);
 }
 
 export async function protectedPost(path: string, body: unknown): Promise<Response> {
