@@ -1,6 +1,6 @@
 # Validation and experiment plan
 
-All experiments below are **planned, not run**. Phase 1 did documentation and source inspection only. Live tests require an approved isolated environment. Store sanitized results here in a future increment, including exact app, OS, Supervisor, Core, Pangolin, edge and connector versions and the source/image digests.
+This document defines the experiment plan; actual scoped results are recorded in [phase-2-results.md](phase-2-results.md). Phase 1 did documentation and source inspection only. Prefer an approved isolated environment for live tests; the owner has authorized limited manual checks using a separate test resource in their production environment. Broader coverage remains pending. Public owner-reported results are restricted to sanitized pass/fail under the owner’s publication preference; keep detailed versions and environment information in the private conversation unless separately authorized.
 
 ## Phase 2 blocking experiments
 

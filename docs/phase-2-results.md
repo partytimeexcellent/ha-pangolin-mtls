@@ -94,3 +94,19 @@ Added operation-stage error diagnostics and moved Fastify error-handler registra
 Local typecheck/build and all 40 automated tests passed. Resource-specific fixtures cover exact identity matching, ambiguous/incomplete searches, wrong organization/hostname, shared policies, other auth/rules, existing targets/trust, hostname matches, target truncation, changed references/resource state, cross-resource target rejection, failure-stage redaction, and API authorization/HTTPS/default-configuration boundaries. A local Chromium simulation passed protected form submission, cleared/hidden key input, normal findings, shared-policy warning, metadata redaction, mobile width and absence of browser storage. The dependency audit reported zero known vulnerabilities at check time. These are local fixture results; the selected production resource has not been inspected by this agent.
 
 [GitHub Actions run 39925715439](https://github.com/partytimeexcellent/ha-pangolin-mtls/actions/runs/39925715439) passed for commit `b833696c66cdcf05e0dd9d8215b0ec5ed6937d2b`: all 40 tests, typecheck/build, dependency audit and native amd64/aarch64 container build/runtime checks. No live resource-inspection or TLS-enforcement result is claimed by this CI run.
+
+## Sanitized owner-reported end-to-end results
+
+Published under the existing permission for sanitized pass/fail results only. These are owner-reported observations from a scoped manual test, not independent verification or full Phase 2/release acceptance. Environment versions and identifiers, configuration, fingerprints, credentials and detailed logs are omitted.
+
+| Check | Result |
+| --- | --- |
+| Public CA certificate fingerprint match | PASS |
+| Request without a client certificate denied | PASS |
+| Request using issued client identity receives HTTP response | PASS |
+| iOS Companion PKCS#12 import | PASS |
+| iOS Companion basic connection and control | PASS |
+| iOS Companion access over cellular | PASS |
+| iOS Companion background/reopen check | PASS |
+
+Remaining validation includes unrelated-issuer rejection, additional invalid/expired identity cases, protocol/path/edge coverage, restart and isolated backup/restore checks, rotation/session behavior, and broader Apple features/platforms. Shared-CA individual revocation remains unsupported by the inspected interface. No complete compatibility, remote automation, recovery or production-readiness claim follows from these results.
