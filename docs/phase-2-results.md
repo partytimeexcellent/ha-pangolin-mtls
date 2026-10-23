@@ -110,3 +110,16 @@ Published under the existing permission for sanitized pass/fail results only. Th
 | iOS Companion background/reopen check | PASS |
 
 Remaining validation includes unrelated-issuer rejection, additional invalid/expired identity cases, protocol/path/edge coverage, restart and isolated backup/restore checks, rotation/session behavior, and broader Apple features/platforms. Shared-CA individual revocation remains unsupported by the inspected interface. No complete compatibility, remote automation, recovery or production-readiness claim follows from these results.
+
+## Sanitized directly observed rejection results
+
+Published under the existing sanitized pass/fail permission. These scoped fresh-connection probes were executed by the agent with a disposable client identity whose chain and clientAuth purpose were checked locally. Temporary credentials were removed. No hostname, CA fingerprint, identity, detailed environment information or raw trace is published. Remote configuration and the owner's working credentials were not changed.
+
+| Check | Result |
+| --- | --- |
+| TLS 1.3 rejection without client certificate | PASS |
+| TLS 1.3 rejection of client certificate from unrelated CA | PASS |
+| TLS 1.2 rejection without client certificate | PASS |
+| TLS 1.2 rejection of client certificate from unrelated CA | PASS |
+
+These results cover the probed fresh connections only. Alternate routes/edges, additional invalid-identity cases, existing sessions, restore/rotation and full release acceptance remain separate gates.
