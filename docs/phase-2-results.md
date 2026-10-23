@@ -1,6 +1,8 @@
 # Phase 2 validation record
 
-Date: October 22, 2026. Increment: `0.1.0-dev.1`, ingress authorization only. The owner approved Phase 2. A test environment is available in principle; its access details and real acceptance results are pending.
+Date: October 22, 2026. Increment: `0.1.0-dev.1`, ingress authorization only. The owner approved Phase 2 and clarified that only production HA is available. Limited installation of this non-signing prototype is authorized; no Pangolin trust or remote-access changes are authorized by that decision.
+
+Owner-reported target: HA OS 18.3, Core 2026.10.1, Supervisor 2026.10.3, amd64 (`qemux86-64`), supported stable installation, local app folder `/addons`. This information is not a successful installation or ingress acceptance result. A backup is available; local recovery access must be confirmed before installation.
 
 ## Implemented
 

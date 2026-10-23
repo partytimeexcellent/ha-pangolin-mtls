@@ -1,10 +1,12 @@
 # Ingress prototype setup
 
-Use an isolated Home Assistant OS/Supervisor test installation. This build checks identity and CSRF protection only. It cannot issue certificates, export credentials or contact Pangolin.
+Prefer an isolated Home Assistant OS/Supervisor test installation. The owner has authorized limited production installation of this ingress-only build with a current backup and local recovery access. This build checks identity and CSRF protection only. It cannot issue certificates, export credentials or contact Pangolin. That authorization does not extend to experimental CA, Pangolin trust or remote-access changes.
 
 ## Local installation
 
-Copy this entire `pangolin_access` directory (including its lockfile and source, excluding `node_modules` and `dist`) into the Supervisor local app directory using your existing development access. Refresh the local app store, install HA Pangolin Access, and leave protection mode enabled. No GitHub repository has been published yet.
+Copy this entire `pangolin_access` directory (including its lockfile and source, excluding `node_modules` and `dist`) into the Supervisor local app directory using your existing development access. Older installations expose this directory at `/addons`; newer documentation names it `/local_apps`. Refresh the local app store, install HA Pangolin Access, and leave protection mode enabled.
+
+The source repository is [partytimeexcellent/ha-pangolin-mtls](https://github.com/partytimeexcellent/ha-pangolin-mtls). If it is publicly readable, add that URL through the app store's Repositories dialog instead of copying files. If it is private, an unauthenticated Supervisor clone will fail: use the local upload route or separately configure an appropriate supported authentication method. Never embed a GitHub token in a repository URL or paste one into logs.
 
 In Configuration, set:
 
