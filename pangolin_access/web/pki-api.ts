@@ -1,8 +1,20 @@
 import { z } from 'zod';
 
 const errors: Record<string, string> = {
+  PANGOLIN_URL_REQUIRED: 'Set pangolin_api_url in the app Configuration to your HTTPS integration API URL ending in /v1, then restart.',
+  PANGOLIN_INPUT: 'Enter the organization ID and API key.',
+  PANGOLIN_BUSY: 'Another Pangolin check is running. Wait and try again.',
+  PANGOLIN_ADDRESS_BLOCKED: 'The API hostname must resolve only to public addresses. Private and reserved destinations are blocked.',
+  PANGOLIN_AUTH_FAILED: 'Pangolin rejected the API key.',
+  PANGOLIN_PERMISSION_DENIED: 'The API key lacks access to a required read operation or this organization.',
+  PANGOLIN_NOT_FOUND: 'An API route or organization was not found. Check the integration API URL and organization ID.',
+  PANGOLIN_REDIRECT: 'The API redirected the request. Configure its final HTTPS URL; redirects are refused.',
+  PANGOLIN_UPSTREAM: 'Pangolin returned an unsuccessful response.',
+  PANGOLIN_CONTRACT: 'The API response does not match the inspected Pangolin contract. Check that this is the integration API.',
+  PANGOLIN_RESPONSE_LIMIT: 'The API response exceeded the check’s size limit.',
+  PANGOLIN_NETWORK: 'The API could not be reached securely within the deadline. Check DNS, HTTPS certificate and network access.',
   CERTIFICATES_DISABLED: 'Enable certificate management in this app’s Configuration, then restart the app.',
-  HTTPS_REQUIRED: 'Use an HTTPS Home Assistant origin before enabling certificate management.',
+  HTTPS_REQUIRED: 'Use an HTTPS Home Assistant origin for this operation.',
   CA_REQUIRED: 'Create the certificate authority first.',
   CA_ALREADY_EXISTS: 'A certificate authority already exists. Refresh this page.',
   PKI_BUSY: 'Another certificate operation is running. Wait and try again.',

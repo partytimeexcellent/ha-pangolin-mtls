@@ -62,3 +62,9 @@ Audit records include actor, action, object ID, result, operation ID, timestamp,
 No private reporting address is configured yet. Before publishing, establish a private reporting channel (for example GitHub private vulnerability reporting), a supported-version policy, and an incident owner. Do not post keys, `.p12` files, tokens or unsanitized backups in public issues.
 
 The [validation plan](docs/validation-plan.md) is mandatory before claims of safe enrollment, enforcement, or recovery. Security review must include source, dependency/container scans, real ingress authorization tests and actual edge handshakes. Production release is blocked until these requirements have evidence.
+
+## Read-only integration check
+
+Build dev.4 accepts an API key only through an HTTPS-origin ingress/session/CSRF-protected POST. The destination URL is configured separately in Supervisor options, never accepted from that POST. All outbound operations are fixed GET routes on that same HTTPS origin; no redirects or upstream URLs from response fields are followed. DNS must resolve only to public addresses; the connection pins one validated answer and retains normal TLS hostname/CA verification. Private and reserved IPv4 addresses, IPv4-mapped IPv6 and non-global/documentation/transition IPv6 destinations are blocked. Private integration endpoints are unsupported in this increment.
+
+The key is not persisted, logged or returned. It necessarily exists in browser/server memory and during verified HTTPS transport; memory erasure is not guaranteed. OpenAPI is requested without credentials. Scoped reads use the bearer key, with fixed error codes and bounded bodies/deadlines. Only allowlisted display fields return to the browser. Read results remain browser memory until navigation or a new check. A successful check is not evidence of mTLS enforcement or authorization to mutate remote infrastructure.

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { checkAccess } from './access-check';
 import { CertificatePanel } from './CertificatePanel';
+import { PangolinPanel } from './PangolinPanel';
 import './style.css';
 
 function App() {
@@ -26,6 +27,7 @@ function App() {
       <p role="status" aria-live="polite">{result}</p>
     </section>
     <CertificatePanel />
+    <PangolinPanel />
     <p className="footnote">Home Assistant login remains required. Device retirement alone does not revoke a certificate.</p>
     <p className="footnote">Build {import.meta.env.VITE_APP_VERSION}</p>
   </main>;

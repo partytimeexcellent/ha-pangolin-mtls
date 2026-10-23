@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.0-dev.4
+
+- Add an explicit read-only Pangolin integration API check: deployed OpenAPI, organization, and first-page sites/domains/resources.
+- Keep the API URL in Supervisor options; accept the organization key through an HTTPS, ingress/session/CSRF-protected form for one check only, without persistence.
+- Verify HTTPS certificates, pin a public DNS address, block private/reserved destinations and redirects, bound responses/deadlines, and redact upstream errors.
+- Report advertised mTLS routes separately from permissions and actual enforcement. No Pangolin writes or automatic background checks.
+
 ## 0.1.0-dev.3
 
 - Add default-off, HTTPS-only CA creation and device certificate issuance, protected by the existing ingress/user/session/CSRF checks.
