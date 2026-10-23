@@ -6,7 +6,7 @@ A proposed Home Assistant Supervisor app for managing device certificates and re
 
 The source, lockfile, app manifest and Dockerfile are in [pangolin_access](pangolin_access/README.md). Native amd64/aarch64 container builds and runtime checks passed on GitHub Actions. Selected HA ingress and initial iOS Companion checks passed as owner-reported results; broader compatibility remains unverified. See [local development](docs/development.md) and [prototype validation results](docs/phase-2-results.md).
 
-Add `https://github.com/partytimeexcellent/ha-pangolin-mtls` to Home Assistant's app repositories. Follow the [setup guide](pangolin_access/DOCS.md) before enabling certificate management. Upgrading alone does not create a CA or device identity.
+Add `https://github.com/partytimeexcellent/ha-pangolin-mtls` to Home Assistant's app repositories. Follow the [installation tutorial](docs/installation.md) for the simplified first-install path, including Pangolin API setup, then use [iOS enrollment](docs/ios-enrollment.md) for additional devices. The [app documentation](pangolin_access/DOCS.md) provides a short checklist. Upgrading alone does not create a CA or device identity.
 
 The intended deployment is one Supervisor-managed container containing the dashboard, API, PKI, enrollment, database, and diagnostics. An existing Pangolin server and a connected site that can reach Home Assistant are prerequisites. No additional certificate service or Compose deployment is required.
 
@@ -28,12 +28,13 @@ Read [ARCHITECTURE.md](ARCHITECTURE.md), [SECURITY.md](SECURITY.md), [research e
 - Home Assistant login remains required. mTLS adds another control at the edge.
 - The app will not automatically edit Home Assistant configuration or unrelated Pangolin resources.
 
-## Planned user guides
+## Setup and user guides
 
 - [Installation](docs/installation.md)
 - [iOS and iPadOS enrollment](docs/ios-enrollment.md)
 - [macOS enrollment](docs/macos-enrollment.md)
 - [Certificate management](docs/certificate-management.md)
 - [Troubleshooting](docs/troubleshooting.md)
+- [Optional advanced checks](docs/manual-checks.md)
 
-The Apple enrollment guides describe future device validation and remain untested. The prototype has its own [setup guide](pangolin_access/DOCS.md). Maintainer contact, license selection, and security reporting channel remain release decisions; this repository does not yet grant an open-source license. Separate encrypted CA recovery export and rotation remain release gates; use a protected Supervisor backup for the current prototype.
+The iOS guide includes the scoped working import path; iPadOS and macOS acceptance and broader Apple features remain separate checks. Maintainer contact, license selection, and security reporting channel remain release decisions; this repository does not yet grant an open-source license. Separate encrypted CA recovery export and rotation remain release gates; use a protected Supervisor backup for the current prototype.

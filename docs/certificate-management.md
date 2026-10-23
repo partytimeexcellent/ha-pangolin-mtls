@@ -1,8 +1,8 @@
 # Certificate management and enforcement limits
 
-This document describes proposed behavior; no certificates have been issued by this project.
+The current prototype implements CA creation, device certificate issuance, public certificate history and short-lived PKCS#12 delivery. Renewal automation, retirement controls, rotation and standalone encrypted recovery export remain proposed. Start with the [installation tutorial](installation.md) for the current workflow.
 
-Each device has a name/platform plus certificate history: issuer, serial, SHA-256 fingerprint, issued/expiry dates, renewal links, export state and administrative status. A device may have multiple valid certificates after renewal. “Retired” means no further issuance/export is intended; it does not mean Pangolin rejects the existing certificate. Deleting a retired inventory entry cannot revoke a copied private key.
+Current issuance records include name/platform, serial, SHA-256 fingerprint, dates and package export status. Renewal links and administrative lifecycle controls are future work. A device may have multiple valid certificates after renewal. “Retired” means no further issuance/export is intended; it does not mean Pangolin rejects the existing certificate. Deleting a retired inventory entry cannot revoke a copied private key.
 
 ## Revocation choices
 
@@ -23,8 +23,8 @@ Fresh-handshake rejection is narrower than immediate loss of access. Test TLS se
 
 ## Renewal, backup and recovery
 
-Proposed leaf default: 90 days, with reminders at 30, 14 and 7 days. Renew before expiry by creating a new key/certificate and importing its new package. There is no automatic Apple installation. Old and new leaves can both remain valid until expiry or issuer trust removal. Device inventory calculates expiry from the issued certificate, independently of client UI.
+The implemented leaf default is 90 days. Expiry reminders are future work. Renew before expiry by creating a new key/certificate and importing its new package. There is no automatic Apple installation. Old and new leaves can both remain valid until expiry or issuer trust removal. Device inventory calculates expiry from the issued certificate, independently of client UI.
 
-Make a protected Supervisor backup and a separately encrypted CA recovery export with a user-held password. Verify a restore in isolation. The CA private key stays inside the app except for an explicit encrypted recovery export; Pangolin receives public certificates only. Protect backups as access-granting credentials. Automatic-unlock storage and its limitations are explained in [SECURITY.md](../SECURITY.md#at-rest-encryption-and-startup).
+Make a protected Supervisor backup including this app’s data and verify restoration in isolation. A separate encrypted CA recovery export with a user-held password is planned but is not available in this prototype. The current CA key is retained in app data and its backups; Pangolin receives public certificates only. Protect backups as access-granting credentials. Automatic-unlock storage and its limitations are explained in [SECURITY.md](../SECURITY.md#at-rest-encryption-and-startup).
 
 Restore must check issuer/key consistency, metadata version and live Pangolin trust, invalidate outstanding enrollment tokens, and avoid automatically republishing trust. A restored old certificate record is not evidence that a device is authorized or blocked at the edge. Losing the CA without a usable backup requires a new CA and re-enrollment; it does not justify disabling mTLS.

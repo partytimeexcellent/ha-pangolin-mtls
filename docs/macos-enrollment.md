@@ -1,6 +1,6 @@
 # macOS enrollment proposal
 
-Status: pending real Mac testing. Safari and Companion are separate acceptance targets.
+Status: Safari/Companion import acceptance remains pending; successful terminal curl checks do not establish either. Safari and Companion are separate acceptance targets. For the optional file-based PKCS#12 terminal check and password-prompt workaround, see [advanced checks](manual-checks.md).
 
 For Safari, obtain the encrypted device `.p12` through local authorized enrollment. Use Keychain Access, choose File > Import Items, select the package and your login keychain, and provide its export password. Confirm the imported identity includes its private key. Open the protected HTTPS hostname in Safari and choose the matching identity if prompted, then complete normal HA login. Apple's [Keychain import guide](https://support.apple.com/guide/keychain-access/import-and-export-keychain-items-kyca35961/mac) documents the import operation; selection and behavior with this app's chain still need testing.
 
