@@ -2,7 +2,7 @@
 
 **Start with the [complete installation tutorial](https://github.com/partytimeexcellent/ha-pangolin-mtls/blob/main/docs/installation.md).** It covers enabling Pangolin's integration API, DNS/Traefik routing, exact key permissions, certificate trust and iOS Companion import. It also separates routine setup from advanced validation.
 
-This dev.6 prototype issues local client certificates and performs explicit read-only Pangolin checks. Configure Pangolin trust/resources manually through its dashboard. The app does not upload certificates, enable resources or edit HA's configuration.
+This dev.7 prototype issues local client certificates and performs explicit read-only Pangolin checks. Configure Pangolin trust/resources manually through its dashboard. The app does not upload certificates, enable resources or edit HA's configuration.
 
 ## First installation: short path
 
@@ -19,9 +19,9 @@ The [tutorial](https://github.com/partytimeexcellent/ha-pangolin-mtls/blob/main/
 
 ## Safari and Companion on the same iPhone
 
-One device identity can be used for both: import the `.p12` inside Companion, then install the same file through iOS **Settings → Profile Downloaded** or **General → VPN & Device Management** for Safari. Keep the package until both imports and connection checks succeed; one download can supply both installations. Use a different identity for each additional physical device. The package is not hardware-bound, and sharing it means both copies hold the same private key. Update and test both when replacing it.
+One device identity can be used for both: choose **iPhone ZIP**, import its `.p12` inside Companion, then install its `.mobileconfig` through iOS **Settings → Profile Downloaded** or **General → VPN & Device Management** for Safari. Keep the package until both imports and connection checks succeed; one download can supply both installations. Use a different identity for each additional physical device. The package is not hardware-bound, and sharing it means both copies hold the same private key. Update and test both when replacing it.
 
-The Settings path installs an identity, not MDM enrollment. Safari must be tested separately; its compatibility with this project has not yet been verified. See the [full Safari and shared-identity instructions](https://github.com/partytimeexcellent/ha-pangolin-mtls/blob/main/docs/ios-enrollment.md#install-for-safari-through-ios-settings).
+For Safari only, use **Download Safari profile once**. The Settings title is **Home Assistant mTLS - [device name] - expires [month year]**, based on the actual expiry. The unsigned profile omits the password and installs only the identity. Review its expected name and contents; enter the separate package password. All formats share one single-use download permission, so choose ZIP when you need both files. An app update does not rename an installed identity. The Settings path installs an identity, not MDM enrollment. Safari must be tested separately; its compatibility with this project has not yet been verified. See the [full Safari and shared-identity instructions](https://github.com/partytimeexcellent/ha-pangolin-mtls/blob/main/docs/ios-enrollment.md#install-for-safari-through-ios-settings).
 
 ## App configuration
 

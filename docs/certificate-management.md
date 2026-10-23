@@ -40,7 +40,7 @@ The app now requests Core API permission for this feature, even when the option 
 ## Replace a device certificate
 
 1. In the inventory, choose **Replace certificate** beside the intended device. Review its name, platform and lifetime, then choose **Issue replacement**. A fresh key and password are generated under the existing CA.
-2. Save the password separately and download either the encrypted `.p12` or **iPhone ZIP** within five minutes. Choosing either consumes the same download permission. Import the new package inside the intended app; on iPhone use the [Companion import guide](ios-enrollment.md).
+2. Save the password separately and download either the encrypted `.p12` or **iPhone ZIP** within five minutes. The Safari profile is a third format; all formats consume the same download permission. Choose ZIP to receive both the P12 and named Safari profile for one identity. Import the new package inside the intended app; on iPhone use the [Companion import guide](ios-enrollment.md).
 3. If the same identity is installed in Safari and Companion on one iPhone, import the replacement into both places using their separate installation paths. Close/reopen each intended client and test the protected external hostname over cellular or another external network, avoiding a local fallback or existing connection. Normal Home Assistant login remains required.
 4. Under the replacement's inventory row, check **I imported this replacement and tested access**, then choose **Confirm replacement tested**. This records your observation and suppresses future reminders for the older record. It does not revoke the old identity or dismiss previously delivered notifications; dismiss those in HA.
 

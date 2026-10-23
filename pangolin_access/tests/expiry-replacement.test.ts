@@ -45,9 +45,13 @@ test('ZIP is a single-use encrypted P12; replacement confirmation records a test
   assert.match(String(downloaded.headers['content-type']), /^application\/zip/);
   assert.equal(downloaded.headers['cache-control'], 'no-store');
   const files = unzipSync(downloaded.rawPayload);
-  assert.deepEqual(Object.keys(files), [`ha-device-${replacement.id}.p12`]);
+  assert.deepEqual(Object.keys(files).sort(), [`ha-device-${replacement.id}.mobileconfig`, `ha-device-${replacement.id}.p12`]);
+  const profile = Buffer.from(files[`ha-device-${replacement.id}.mobileconfig`]!).toString();
+  const embedded = profile.match(/<data>([A-Za-z0-9+/=]+)<\/data>/)![1]!;
+  assert.deepEqual(Buffer.from(embedded, 'base64'), Buffer.from(files[`ha-device-${replacement.id}.p12`]!));
+  assert.ok(!profile.includes(replacement.password));
   const packagePath = join(root, 'fixture.p12');
-  await writeFile(packagePath, files[Object.keys(files)[0]!]!, { mode: 0o600 });
+  await writeFile(packagePath, files[`ha-device-${replacement.id}.p12`]!, { mode: 0o600 });
   await openssl(['pkcs12', '-in', packagePath, '-passin', 'fd:3', '-noout'], [replacement.password]);
   await assert.rejects(openssl(['pkcs12', '-in', packagePath, '-passin', 'fd:3', '-noout'], ['incorrect']));
   assert.equal((await post(`/api/certificates/${replacement.id}/download`, { token: replacement.token, format: 'p12' })).statusCode, 410);

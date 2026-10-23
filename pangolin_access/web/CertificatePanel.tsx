@@ -5,7 +5,7 @@ import { checked, protectedPost } from './pki-api';
 const authoritySchema = z.object({ fingerprint: z.string(), serial: z.string(), issuedAt: z.string(), expiresAt: z.string() });
 const certificateSchema = z.object({ id: z.string().uuid(), name: z.string(), platform: z.string(), serial: z.string(), fingerprint: z.string(), issuedAt: z.string(), expiresAt: z.string(), exportStatus: z.string(), replacesId: z.string().uuid().nullable(), replacementConfirmedAt: z.string().nullable() });
 const inventorySchema = z.object({ authority: authoritySchema.nullable(), certificates: z.array(certificateSchema), reminders: z.object({ enabled: z.boolean(), deliveryFailed: z.boolean(), thresholds: z.array(z.number()) }) });
-const packageSchema = z.object({ id: z.string().uuid(), password: z.string(), token: z.string().regex(/^[a-f0-9]{64}$/), expiresAt: z.number() });
+const packageSchema = z.object({ id: z.string().uuid(), password: z.string(), token: z.string().regex(/^[a-f0-9]{64}$/), expiresAt: z.number(), profileDisplayName: z.string() });
 type Package = z.infer<typeof packageSchema>;
 
 export function CertificatePanel() {
@@ -90,18 +90,18 @@ export function CertificatePanel() {
       setMessage('Certificate issued. Save its password separately, then download the package within five minutes.');
     });
   }
-  async function download(format: 'p12' | 'zip') {
+  async function download(format: 'p12' | 'zip' | 'mobileconfig') {
     if (!bundle) return;
     await action(async () => {
       const response = await protectedPost(`./api/certificates/${bundle.id}/download`, { token: bundle.token, format });
-      if (!response.headers.get('content-type')?.startsWith(format === 'zip' ? 'application/zip' : 'application/x-pkcs12')) throw new Error();
+      if (!response.headers.get('content-type')?.startsWith(format === 'zip' ? 'application/zip' : format === 'mobileconfig' ? 'application/x-apple-aspen-config' : 'application/x-pkcs12')) throw new Error();
       const url = URL.createObjectURL(await response.blob());
       const anchor = document.createElement('a');
       anchor.href = url; anchor.download = `ha-device-${bundle.id}.${format}`;
       document.body.append(anchor); anchor.click(); anchor.remove();
       setTimeout(() => URL.revokeObjectURL(url), 60_000);
       setDownloaded(true); await refresh();
-      setMessage('Package delivered once. Import it into Companion using the separate password. Delivery does not prove installation.');
+      setMessage(format === 'mobileconfig' ? 'Safari profile delivered once. Complete installation in iOS Settings using the separate package password. Delivery does not prove installation.' : 'Package delivered once. Import the .p12 into Companion; the ZIP also contains the named Safari profile. Use the separate password. Delivery does not prove installation.');
     });
   }
   return <section aria-labelledby="certificate-title">
@@ -134,12 +134,15 @@ export function CertificatePanel() {
       </>}
       {bundle && <aside>
         <h3>Temporary enrollment package</h3>
+        <p>Safari profile name: {bundle.profileDisplayName}</p>
         <p>Expires {new Date(bundle.expiresAt).toLocaleTimeString()}. Keep the package and password separate.</p>
         <button onClick={() => setShowPassword(!showPassword)}>{showPassword ? 'Hide password' : 'Show package password'}</button>
         {showPassword && <p className="fingerprint"><code>{bundle.password}</code></p>}
         <button onClick={() => download('p12')} disabled={busy || downloaded}>{downloaded ? 'Package downloaded' : 'Download .p12 once'}</button>
         <button onClick={() => download('zip')} disabled={busy || downloaded}>Download iPhone ZIP once</button>
-        <p>Choose one format. For iPhone, AirDrop the ZIP, save it to Files and extract it there; import the .p12 inside Companion. Keep the password separate. ZIP adds no encryption.</p>
+        <button onClick={() => download('mobileconfig')} disabled={busy || downloaded}>Download Safari profile once</button>
+        <p>Choose one download. For both apps, choose iPhone ZIP: extract in Files, import the .p12 inside Companion, then open the .mobileconfig to install the named Safari identity in Settings. Safari-only users can choose the profile directly. Keep the password separate.</p>
+        <p>The profile contains only the encrypted identity; it has no password, MDM enrollment or root trust settings. It is unsigned, so iOS may show Not Signed or Unverified. Review the expected name and identity before installing. ZIP adds no encryption. Actual iOS profile installation still needs verification.</p>
         <p>Restarting the app or leaving this page can make a pending package unrecoverable. No reusable download link is created.</p>
       </aside>}
       {inventory.certificates.length > 0 && <>

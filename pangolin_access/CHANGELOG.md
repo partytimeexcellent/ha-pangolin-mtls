@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.0-dev.7
+
+- Add a named Safari `.mobileconfig` download using “Home Assistant mTLS - [device name] - expires [actual UTC month/year]”. Preview the generated title in the temporary package panel.
+- Include the same encrypted identity as both `.p12` and named profile in the iPhone ZIP for separate Companion/Safari installation. All three format choices share one expiring, actor-bound, single-use capability.
+- Omit passwords, MDM enrollment, separate root-trust payloads and restrictions from the unsigned profile. Preserve certificate subjects, CA state, database version and existing installed identities.
+- Add independent plist parsing and cryptographic/API checks; document manual iOS installation and its pending real-device validation.
+
 ## 0.1.0-dev.6
 
 - Show certificate/CA expiry and guide device replacement with a fresh identity, import instructions and explicit owner test confirmation. Keep older certificates valid and suppress only their reminders after confirmation.

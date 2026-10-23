@@ -1,4 +1,5 @@
 import { zipSync } from 'fflate';
+import { appleProfile, profileDisplayName } from './apple-profile.js';
 import { DatabaseSync } from 'node:sqlite';
 import { createHash, createPrivateKey, generateKeyPair, randomBytes, randomUUID, X509Certificate } from 'node:crypto';
 import { promisify } from 'node:util';
@@ -214,18 +215,30 @@ export class PkiService {
           this.audit(actor, 'certificate_issued', id); this.db.exec('COMMIT');
         } catch (error) { this.db.exec('ROLLBACK'); data.fill(0); throw error; }
         this.pending.set(tokenHash, { data, expires, certificateId: id });
-        return { id, password, token, expiresAt: expires, certificate: this.inventory().find((item) => item.id === id)! };
+        return { id, password, token, expiresAt: expires, profileDisplayName: profileDisplayName(input.name, new Date(cert.validTo).toISOString()), certificate: this.inventory().find((item) => item.id === id)! };
       });
     });
   }
 
-  download(id: string, token: string, actor: string, format: 'p12' | 'zip' = 'p12'): Buffer {
+  download(id: string, token: string, actor: string, format: 'p12' | 'zip' | 'mobileconfig' = 'p12'): Buffer {
     this.expire();
     if (!/^[a-f0-9]{64}$/.test(token)) throw new PkiError('EXPORT_UNAVAILABLE', 410);
     const key = hash(token);
     const pending = this.pending.get(key);
     if (!pending || pending.certificateId !== id) throw new PkiError('EXPORT_UNAVAILABLE', 410);
-    const data = format === 'zip' ? Buffer.from(zipSync({ [`ha-device-${id}.p12`]: pending.data }, { level: 0 })) : Buffer.from(pending.data);
+    const certificate = this.inventory().find((item) => item.id === id);
+    if (!certificate) throw new PkiError('EXPORT_UNAVAILABLE', 410);
+    let data: Buffer;
+    if (format === 'p12') data = Buffer.from(pending.data);
+    else {
+      const profile = appleProfile(certificate, pending.data);
+      try {
+        data = format === 'mobileconfig' ? Buffer.from(profile) : Buffer.from(zipSync({
+          [`ha-device-${id}.p12`]: pending.data,
+          [`ha-device-${id}.mobileconfig`]: profile,
+        }, { level: 0 }));
+      } finally { profile.fill(0); }
+    }
     this.db.exec('BEGIN IMMEDIATE');
     try {
       const result = this.db.prepare('UPDATE exports SET consumed=1 WHERE token_hash=? AND certificate_id=? AND actor=? AND expires>? AND consumed=0').run(key, id, actor, this.now());

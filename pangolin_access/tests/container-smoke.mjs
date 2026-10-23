@@ -29,10 +29,14 @@ try {
   const issued = await pki.issue({ name: 'Disposable runtime fixture', platform: 'other', lifetimeDays: 1 }, 'fixture');
   const bundle = pki.download(issued.id, issued.token, 'fixture', 'zip');
   const files = unzipSync(bundle);
-  assert.deepEqual(Object.keys(files), [`ha-device-${issued.id}.p12`]);
-  assert.ok(files[Object.keys(files)[0]].length > 1000);
-  files[Object.keys(files)[0]].fill(0);
+  assert.deepEqual(Object.keys(files).sort(), [`ha-device-${issued.id}.mobileconfig`, `ha-device-${issued.id}.p12`]);
+  const profile = Buffer.from(files[`ha-device-${issued.id}.mobileconfig`]).toString();
+  assert.ok(profile.includes('Home Assistant mTLS - Disposable runtime fixture - expires '));
+  assert.ok(!profile.includes(issued.password));
+  assert.ok(files[`ha-device-${issued.id}.p12`].length > 1000);
+  files[`ha-device-${issued.id}.p12`].fill(0);
   assert.ok(bundle.length > 1000);
+  files[`ha-device-${issued.id}.mobileconfig`].fill(0);
   bundle.fill(0);
   await pki.close();
   console.log('Runtime smoke check passed: root dropped, state private, direct HTTP denied, disposable CA and encrypted P12 ZIP generated.');
