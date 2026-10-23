@@ -15,6 +15,10 @@ In Configuration, set:
 
 Start the app and select Open Web UI. Click Check my access. A pass means this request met the configured identity, peer, origin, session and CSRF checks; it does not certify Supervisor or enable signing. No credentials or external state change during the check.
 
+From build `0.1.0-dev.2`, failures show the request stage and a diagnostic code. The log records only fixed access-denial codes. `ORIGIN_MISMATCH` means the origin header differs from configuration; `ORIGIN_MISSING` and `ORIGIN_NULL` identify absent and opaque origins respectively. None is accepted as a fallback. `SESSION_OR_CSRF_INVALID` identifies an expired, missing or changed session/CSRF token. A non-JSON response or `NETWORK_ERROR` may mean the request did not reach this app. Share the displayed message or fixed code, not browser headers or a full ingress URL.
+
+After an update, reopen the Web UI and confirm the build number shown at the bottom changed. The Home Assistant repository URL is unchanged; refresh/check for updates in the app store if a new version is not offered yet.
+
 ## Acceptance checks
 
 1. Confirm the allowlisted administrator can open the UI and complete the check.

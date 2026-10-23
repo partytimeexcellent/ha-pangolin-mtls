@@ -1,10 +1,7 @@
 import { useState } from 'react';
 import { createRoot } from 'react-dom/client';
-import { z } from 'zod';
+import { checkAccess } from './access-check';
 import './style.css';
-
-const sessionSchema = z.object({ sessionId: z.string().regex(/^[a-f0-9]{64}$/), csrfToken: z.string().regex(/^[a-f0-9]{64}$/) });
-const resultSchema = z.object({ authorized: z.literal(true), signingEnabled: z.literal(false) });
 
 function App() {
   const [busy, setBusy] = useState(false);
@@ -13,19 +10,7 @@ function App() {
     setBusy(true);
     setResult('Checking…');
     try {
-      const sessionResponse = await fetch('./api/session', { cache: 'no-store', credentials: 'same-origin' });
-      if (!sessionResponse.ok) throw new Error();
-      const session = sessionSchema.parse(await sessionResponse.json());
-      const response = await fetch('./api/authorization-check', {
-        method: 'POST', credentials: 'same-origin', cache: 'no-store',
-        headers: { 'content-type': 'application/json', 'x-access-session': session.sessionId, 'x-csrf-token': session.csrfToken },
-        body: '{}',
-      });
-      if (!response.ok) throw new Error();
-      resultSchema.parse(await response.json());
-      setResult('Authorization check passed. Certificate signing remains disabled.');
-    } catch {
-      setResult('Check failed. Confirm your allowed user ID, Home Assistant origin and ingress access.');
+      setResult(await checkAccess());
     } finally { setBusy(false); }
   }
   return <main>
@@ -43,6 +28,7 @@ function App() {
       <p>This build cannot create credentials or change Pangolin. Real Home Assistant ingress validation comes before certificate issuance.</p>
     </aside>
     <p className="footnote">Home Assistant login remains required. Device retirement alone does not revoke a certificate.</p>
+    <p className="footnote">Build {import.meta.env.VITE_APP_VERSION}</p>
   </main>;
 }
 createRoot(document.getElementById('root')!).render(<App />);

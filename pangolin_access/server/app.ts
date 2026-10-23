@@ -1,6 +1,6 @@
 import { randomBytes, timingSafeEqual } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
-import Fastify, { type FastifyRequest } from 'fastify';
+import Fastify, { type FastifyReply, type FastifyRequest } from 'fastify';
 import staticFiles from '@fastify/static';
 import rateLimit from '@fastify/rate-limit';
 import { z } from 'zod';
@@ -25,10 +25,16 @@ function equalToken(left: string | undefined, right: string): boolean {
 export async function createApp(options: Options, settings: {
   now?: () => number;
   webRoot?: string;
+  onAccessDenied?: (code: string) => void;
 } = {}) {
   const now = settings.now ?? Date.now;
   const sessions = new Map<string, Session>();
   const admins = new Set(options.admin_user_ids);
+  function deny(reply: FastifyReply, status: number, code: string, error: string) {
+    // Only fixed application codes reach this callback; never forward request data.
+    settings.onAccessDenied?.(code);
+    return reply.code(status).send({ code, error });
+  }
   // Never log request URLs, headers, identity or bodies (ingress URLs contain secrets).
   const app = Fastify({
     logger: false, trustProxy: false, bodyLimit: 4096,
@@ -45,29 +51,31 @@ export async function createApp(options: Options, settings: {
     });
     const address = request.raw.socket.remoteAddress;
     if (address !== peer && address !== `::ffff:${peer}`) {
-      return reply.code(403).send({ error: 'Ingress connection required.' });
+      return deny(reply, 403, 'INGRESS_PEER_REQUIRED', 'Ingress connection required.');
     }
     const user = header(request, 'x-remote-user-id');
     if (!user || !admins.has(user)) {
-      return reply.code(403).send({ error: 'An explicitly authorized Home Assistant user is required.' });
+      return deny(reply, 403, 'USER_NOT_AUTHORIZED', 'An explicitly authorized Home Assistant user is required.');
     }
     const path = header(request, 'x-ingress-path');
     if (!path || !ingressPath.test(path)) {
-      return reply.code(400).send({ error: 'A valid ingress path is required.' });
+      return deny(reply, 400, 'INVALID_INGRESS_PATH', 'A valid ingress path is required.');
     }
     if (request.method !== 'GET' && request.method !== 'HEAD') {
       if (header(request, 'origin') !== options.home_assistant_origin) {
-        return reply.code(403).send({ error: 'Home Assistant origin required.' });
+        const suppliedOrigin = header(request, 'origin');
+        const code = !suppliedOrigin ? 'ORIGIN_MISSING' : suppliedOrigin === 'null' ? 'ORIGIN_NULL' : 'ORIGIN_MISMATCH';
+        return deny(reply, 403, code, 'Home Assistant origin required.');
       }
       const type = header(request, 'content-type')?.toLowerCase();
       if (!type || !/^application\/json(?:\s*;\s*charset=utf-8)?$/.test(type)) {
-        return reply.code(415).send({ error: 'JSON required.' });
+        return deny(reply, 415, 'JSON_REQUIRED', 'JSON required.');
       }
       const id = header(request, 'x-access-session');
       const session = id ? sessions.get(id) : undefined;
       if (!session || session.expires <= now() || session.user !== user || session.path !== path ||
           !equalToken(header(request, 'x-csrf-token'), session.csrf)) {
-        return reply.code(403).send({ error: 'A current authorized session and CSRF token are required.' });
+        return deny(reply, 403, 'SESSION_OR_CSRF_INVALID', 'A current authorized session and CSRF token are required.');
       }
     }
   });
@@ -80,7 +88,7 @@ export async function createApp(options: Options, settings: {
   app.get('/api/session', { config: { rateLimit: { max: 10, timeWindow: 60_000 } } }, async (request, reply) => {
     const time = now();
     for (const [id, session] of sessions) if (session.expires <= time) sessions.delete(id);
-    if (sessions.size >= maxSessions) return reply.code(503).send({ error: 'Session capacity reached. Try again later.' });
+    if (sessions.size >= maxSessions) return reply.code(503).send({ code: 'SESSION_CAPACITY', error: 'Session capacity reached. Try again later.' });
     const id = randomBytes(32).toString('hex');
     const csrf = randomBytes(32).toString('hex');
     sessions.set(id, {
@@ -99,7 +107,7 @@ export async function createApp(options: Options, settings: {
 
   app.post('/api/authorization-check', { config: { rateLimit: { max: 10, timeWindow: 60_000 } } }, async (request, reply) => {
     if (!z.strictObject({}).safeParse(request.body).success) {
-      return reply.code(400).send({ error: 'An empty JSON object is required.' });
+      return reply.code(400).send({ code: 'INVALID_CHECK_BODY', error: 'An empty JSON object is required.' });
     }
     return { authorized: true, signingEnabled: false };
   });
@@ -109,13 +117,13 @@ export async function createApp(options: Options, settings: {
     index: ['index.html'], dotfiles: 'deny', redirect: false,
     cacheControl: false, etag: false, lastModified: false,
   });
-  app.setNotFoundHandler(async (_request, reply) => reply.code(404).send({ error: 'Not found.' }));
+  app.setNotFoundHandler(async (_request, reply) => reply.code(404).send({ code: 'API_NOT_FOUND', error: 'Not found.' }));
   app.setErrorHandler(async (_error, _request, reply) => {
     // Do not echo schema inputs, malformed request bodies or upstream errors.
     const status = _error instanceof Error && 'statusCode' in _error && typeof _error.statusCode === 'number'
       ? _error.statusCode : undefined;
     return reply.code(status && status >= 400 && status < 500 ? status : 500)
-      .send({ error: status === 429 ? 'Too many requests.' : 'Request could not be processed.' });
+      .send({ code: status === 429 ? 'RATE_LIMITED' : 'REQUEST_FAILED', error: status === 429 ? 'Too many requests.' : 'Request could not be processed.' });
   });
   app.addHook('onClose', async () => sessions.clear());
   return app;

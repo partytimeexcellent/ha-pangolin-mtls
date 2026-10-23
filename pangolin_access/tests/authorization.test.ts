@@ -154,3 +154,18 @@ test('configuration rejects invalid IDs, credentials, paths and non-HTTP origins
   assert.equal(optionsSchema.safeParse({ admin_user_ids: [], home_assistant_origin: origin, auth_bypass: true }).success, false);
   assert.equal(optionsSchema.parse({ admin_user_ids: [admin], home_assistant_origin: `${origin}/` }).home_assistant_origin, origin);
 });
+
+test('denial diagnostics distinguish origin failures without recording sensitive headers', async (t) => {
+  const codes: string[] = [];
+  const app = await createApp({ admin_user_ids: [admin], home_assistant_origin: origin }, {
+    webRoot, onAccessDenied: (code) => codes.push(code),
+  });
+  t.after(() => app.close());
+  for (const [suppliedOrigin, code] of [[undefined, 'ORIGIN_MISSING'], ['null', 'ORIGIN_NULL'], ['https://wrong.test', 'ORIGIN_MISMATCH']] as const) {
+    const response = await app.inject({ method: 'POST', url: '/api/authorization-check', remoteAddress: address,
+      headers: { ...headers, ...(suppliedOrigin ? { origin: suppliedOrigin } : {}), 'x-csrf-token': 'private-token' }, payload: {} });
+    assert.equal(response.statusCode, 403);
+    assert.equal(response.json().code, code);
+  }
+  assert.deepEqual(codes, ['ORIGIN_MISSING', 'ORIGIN_NULL', 'ORIGIN_MISMATCH']);
+});

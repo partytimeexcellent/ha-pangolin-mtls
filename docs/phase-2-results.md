@@ -35,6 +35,12 @@ The test suite checks forged peer/forwarded headers, missing/non-allowlisted ide
 
 ## Next gate
 
-Install this increment on the isolated HA instance using [DOCS.md](../pangolin_access/DOCS.md). Confirm actual trusted identity forwarding, denial for wrong/missing users and non-Supervisor peers, nested assets/POST behavior, non-root operation, health and shutdown. Record versions and sanitized outcomes here. Do not record actual ingress tokens, cookies or user IDs.
+### First production check and diagnostic follow-up
+
+The owner reports that `0.1.0-dev.1` starts without logged errors and the UI loads, but Check my access returns the generic failure message. The owner confirms using the intended public HTTPS origin. This does not establish the cause or a passed E1 result. The old UI discarded response reasons and the server did not log access-denial codes.
+
+Increment `0.1.0-dev.2` adds fixed error codes, stage/status reporting, sanitized denial logging and a visible build version. It preserves the existing authorization boundary and keeps signing disabled. Local typecheck, production build and 19 automated tests passed. An additional isolated Chromium test using synthetic ingress forwarding confirmed a successful check for the matching origin and a visible `ORIGIN_MISMATCH` for a different configured origin. That simulation is not the owner's proxy/Supervisor path. Updated real-HA results remain pending installation; do not classify this as a confirmed fix of the underlying access failure.
+
+Install this increment using [DOCS.md](../pangolin_access/DOCS.md), within the owner's authorized ingress-only scope. Confirm actual trusted identity forwarding, denial for wrong/missing users and non-Supervisor peers, nested assets/POST behavior, non-root operation, health and shutdown. Record versions and sanitized outcomes here. Do not record actual ingress tokens, cookies or user IDs.
 
 Only after E1 acceptance should the next increment enable CA generation and one-device PKCS#12 export. Later increments need no fresh Phase 1 approval, but they must preserve this gate and the prohibition on unapproved remote infrastructure changes. Phase 3 is still gated on a successful full POC and owner review.

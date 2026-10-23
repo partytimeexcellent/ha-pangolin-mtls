@@ -15,7 +15,9 @@ async function main() {
     process.setuid!(1000);
   }
   delete process.env.SUPERVISOR_TOKEN;
-  const app = await createApp(options);
+  const app = await createApp(options, {
+    onAccessDenied: (code) => process.stdout.write(JSON.stringify({ event: 'access_denied', code }) + '\n'),
+  });
   let stopping = false;
   for (const signal of ['SIGTERM', 'SIGINT'] as const) {
     process.on(signal, () => {
