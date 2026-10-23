@@ -1,0 +1,7 @@
+configuration:
+  admin_user_ids:
+    name: Authorized administrator user IDs
+    description: "Explicit Home Assistant user IDs allowed to open the app. Empty denies everyone."
+  home_assistant_origin:
+    name: Home Assistant origin
+    description: "Exact scheme, hostname and port used to open Home Assistant, without a path. Requests from other origins are rejected."

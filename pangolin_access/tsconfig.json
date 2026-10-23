@@ -1,0 +1,9 @@
+{
+  "compilerOptions": {
+    "target": "ES2023", "module": "ESNext", "moduleResolution": "Bundler",
+    "strict": true, "noEmit": true, "jsx": "react-jsx",
+    "esModuleInterop": true, "skipLibCheck": true,
+    "noUncheckedIndexedAccess": true
+  },
+  "include": ["web", "tests", "vite.config.ts"]
+}

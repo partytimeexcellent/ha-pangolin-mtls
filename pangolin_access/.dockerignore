@@ -1,0 +1,8 @@
+node_modules
+dist
+tests
+*.key
+*.p12
+*.pfx
+*.sqlite*
+.env*

@@ -1,0 +1,23 @@
+:root { font-family: system-ui, sans-serif; color: #172c39; background: #f3f7fa; color-scheme: light dark; }
+* { box-sizing: border-box; }
+body { margin: 0; }
+main { max-width: 780px; margin: auto; padding: 48px 24px; }
+.eyebrow { font-size: .75rem; letter-spacing: .12em; color: #416579; font-weight: 650; }
+h1 { font-size: clamp(2rem, 7vw, 3rem); letter-spacing: -.04em; margin: 18px 0 8px; }
+.intro { font-size: 1.15rem; margin-bottom: 32px; }
+section, aside { border: 1px solid #d4e1e8; border-radius: 16px; padding: 28px; margin: 20px 0; background: #fff; }
+aside { background: #eaf4fa; }
+h2 { font-size: 1.2rem; }
+p { line-height: 1.6; }
+.badge { font-size: .8rem; font-weight: 600; color: #176482; }
+button { font: inherit; font-weight: 600; color: white; background: #067ca9; border: 0; border-radius: 24px; padding: 12px 22px; cursor: pointer; min-height: 44px; }
+button:hover { background: #08698c; }
+button:focus-visible { outline: 3px solid #ed9b20; outline-offset: 4px; }
+button:disabled { opacity: .65; cursor: wait; }
+.footnote { font-size: .85rem; color: #496272; }
+@media (prefers-color-scheme: dark) {
+  :root { color: #e3eef5; background: #111c24; }
+  section { background: #1b2a35; border-color: #334b5b; }
+  aside { background: #192f3e; border-color: #334b5b; }
+  .eyebrow, .badge, .footnote { color: #a5cbdf; }
+}
