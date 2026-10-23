@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { checkAccess } from './access-check';
+import { CertificatePanel } from './CertificatePanel';
 import './style.css';
 
 function App() {
@@ -18,15 +19,13 @@ function App() {
     <h1>Pangolin Access</h1>
     <p className="intro">Secure access starts with a trusted administrator.</p>
     <section aria-labelledby="prototype-title">
-      <span className="badge">Phase 2 · Ingress prototype</span>
+      <span className="badge">Phase 2 · Certificate prototype</span>
       <h2 id="prototype-title">Verify administration access</h2>
-      <p>This first build checks your Home Assistant identity and protects requests against cross-site actions.</p>
+      <p>Check your Home Assistant identity and request protection before managing certificates.</p>
       <button onClick={check} disabled={busy}>{busy ? 'Checking…' : 'Check my access'}</button>
       <p role="status" aria-live="polite">{result}</p>
     </section>
-    <aside><h2>Certificates are not enabled yet</h2>
-      <p>This build cannot create credentials or change Pangolin. Real Home Assistant ingress validation comes before certificate issuance.</p>
-    </aside>
+    <CertificatePanel />
     <p className="footnote">Home Assistant login remains required. Device retirement alone does not revoke a certificate.</p>
     <p className="footnote">Build {import.meta.env.VITE_APP_VERSION}</p>
   </main>;

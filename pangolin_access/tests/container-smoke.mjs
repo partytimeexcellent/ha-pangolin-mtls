@@ -6,7 +6,7 @@ import { setTimeout as delay } from 'node:timers/promises';
 
 try {
   await writeFile('/data/options.json', JSON.stringify({
-    admin_user_ids: ['a'.repeat(32)], home_assistant_origin: 'https://ha.example.test',
+    admin_user_ids: ['a'.repeat(32)], home_assistant_origin: 'https://ha.example.test', enable_certificate_management: true,
   }), { mode: 0o600 });
   await import('/app/dist/server/main.js');
   let response;
@@ -22,7 +22,15 @@ try {
   assert.deepEqual(process.getgroups(), [1000]);
   assert.equal((await stat('/data/state')).mode & 0o777, 0o700);
   assert.equal(process.env.SUPERVISOR_TOKEN, undefined);
-  console.log('Runtime smoke check passed: root dropped, state private, direct HTTP denied.');
+  const { PkiService } = await import('/app/dist/server/pki.js');
+  const pki = await PkiService.open('/data/state/disposable-runtime-fixture');
+  await pki.createAuthority('fixture');
+  const issued = await pki.issue({ name: 'Disposable runtime fixture', platform: 'other', lifetimeDays: 1 }, 'fixture');
+  const bundle = pki.download(issued.id, issued.token, 'fixture');
+  assert.ok(bundle.length > 1000);
+  bundle.fill(0);
+  await pki.close();
+  console.log('Runtime smoke check passed: root dropped, state private, direct HTTP denied, disposable CA/P12 generated.');
   process.kill(process.pid, 'SIGTERM');
 } catch {
   console.error('Runtime smoke check failed.');

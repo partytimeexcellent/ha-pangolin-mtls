@@ -1,4 +1,7 @@
 configuration:
+  enable_certificate_management:
+    name: Enable certificate management prototype
+    description: "Enables explicit CA creation and device certificate export in the dashboard. Does not contact Pangolin. Off by default."
   admin_user_ids:
     name: Authorized administrator user IDs
     description: "Explicit Home Assistant user IDs allowed to open the app. Empty denies everyone."

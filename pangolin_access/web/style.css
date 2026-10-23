@@ -15,9 +15,22 @@ button:hover { background: #08698c; }
 button:focus-visible { outline: 3px solid #ed9b20; outline-offset: 4px; }
 button:disabled { opacity: .65; cursor: wait; }
 .footnote { font-size: .85rem; color: #496272; }
+label { display: grid; gap: 6px; margin: 16px 0; }
+input, select { font: inherit; padding: 10px; border: 1px solid #829ba9; border-radius: 6px; background: transparent; color: inherit; width: 100%; min-height: 44px; }
+input:focus-visible, select:focus-visible, a:focus-visible { outline: 3px solid #ed9b20; outline-offset: 3px; }
+.check { display: flex; align-items: center; gap: 10px; }
+.check input { width: 20px; min-height: 20px; }
+form { margin-top: 28px; border-top: 1px solid #829ba9; padding-top: 8px; }
+a { color: #087ca7; }
+.fingerprint { overflow-wrap: anywhere; font-family: ui-monospace, monospace; font-size: .8rem; }
+.table-scroll { overflow-x: auto; }
+table { width: 100%; min-width: 640px; border-collapse: collapse; text-align: left; font-size: .85rem; }
+td, th { border-bottom: 1px solid #829ba9; padding: 12px 6px; vertical-align: top; }
+aside button { margin: 8px 8px 0 0; }
 @media (prefers-color-scheme: dark) {
   :root { color: #e3eef5; background: #111c24; }
   section { background: #1b2a35; border-color: #334b5b; }
   aside { background: #192f3e; border-color: #334b5b; }
   .eyebrow, .badge, .footnote { color: #a5cbdf; }
+  a { color: #87d7f6; }
 }

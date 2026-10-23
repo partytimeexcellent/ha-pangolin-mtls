@@ -1,7 +1,7 @@
 name: HA Pangolin Access
-version: "0.1.0-dev.2"
+version: "0.1.0-dev.3"
 slug: pangolin_access
-description: "Development prototype for ingress authorization; certificate signing disabled"
+description: "Development prototype for local client certificates and Pangolin mTLS planning"
 url: https://github.com/partytimeexcellent/ha-pangolin-mtls/tree/main/pangolin_access
 arch:
   - amd64
@@ -16,11 +16,14 @@ panel_admin: true
 panel_icon: mdi:shield-key-outline
 panel_title: Pangolin Access
 backup: cold
-timeout: 20
+timeout: 120
+tmpfs: true
 options:
   admin_user_ids: []
+  enable_certificate_management: false
   home_assistant_origin: "http://homeassistant.local:8123"
 schema:
+  enable_certificate_management: "bool?"
   admin_user_ids:
     - "match(^[a-f0-9]{32}$)"
   home_assistant_origin: url
