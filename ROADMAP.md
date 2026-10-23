@@ -20,7 +20,7 @@ Phase 1 approval was provided by the owner with “proceed.” The architecture'
 
 ## Phase 2 — minimal proof of concept
 
-Current progress: source/build toolchain, local HA packaging, ingress authorization UI and 13 automated tests are implemented. Local TypeScript/build/test checks pass. Native container builds, real ingress identity/authorization acceptance, and all certificate/Pangolin/device experiments remain pending. See [recorded results](docs/phase-2-results.md). Signing remains disabled.
+Current progress: source/build toolchain, HA packaging, ingress authorization UI and 13 automated tests are implemented. Local TypeScript/build/test checks pass. Native amd64/aarch64 builds and runtime smoke checks also passed on GitHub Actions. Real ingress identity/authorization acceptance and all certificate/Pangolin/device experiments remain pending. See [recorded results](docs/phase-2-results.md). Signing remains disabled.
 
 Deliver in small reviewable commits:
 

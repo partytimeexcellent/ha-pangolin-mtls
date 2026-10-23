@@ -4,6 +4,8 @@ Date: October 22, 2026. Increment: `0.1.0-dev.1`, ingress authorization only. Th
 
 Owner-reported target: HA OS 18.3, Core 2026.10.1, Supervisor 2026.10.3, amd64 (`qemux86-64`), supported stable installation, local app folder `/addons`. This information is not a successful installation or ingress acceptance result. A backup is available; local recovery access must be confirmed before installation.
 
+Source is now public in [partytimeexcellent/ha-pangolin-mtls](https://github.com/partytimeexcellent/ha-pangolin-mtls), following explicit owner authorization. GitHub Actions [run 39898052083](https://github.com/partytimeexcellent/ha-pangolin-mtls/actions/runs/39898052083) passed for implementation commit `acbc20bac6c03e406b9f7fdcd767e922bba4a18b`: test/build/audit plus native amd64 and aarch64 container builds and runtime smoke checks. This is independent of, and narrower than, actual Home Assistant ingress acceptance.
+
 ## Implemented
 
 - One Fastify server with explicit user-ID allowlisting, real socket-peer validation and no broad proxy trust.
@@ -24,8 +26,8 @@ Environment: macOS arm64, Node 24.22.1, npm 11.19.1. Commands and setup are in [
 | 13 automated tests | Passed |
 | Locked dependency audit | 0 known vulnerabilities reported at check time; not an independent security review |
 | Manifest parsing/basic privilege review | Passed: two declared architectures, empty allowlist, no host ports or elevated API/network grants |
-| Real Docker/container build | Not run; Docker is absent from this Mac |
-| Native amd64/aarch64 image/runtime | Not run; CI jobs defined but not yet executed |
+| Docker/container build | Passed on GitHub Actions; Docker remains absent from this Mac |
+| Native amd64/aarch64 image/runtime | Passed on native GitHub runners, including privilege drop, private state directory and rejection of direct HTTP |
 | Browser/real Supervisor ingress (E1) | Not run; automated injection is narrower evidence |
 | Certificate, Pangolin, Apple-client experiments E2–E7 | Not run; functionality not implemented in this increment |
 

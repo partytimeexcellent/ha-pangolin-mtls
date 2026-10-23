@@ -4,7 +4,9 @@ A proposed Home Assistant Supervisor app for managing device certificates and re
 
 **Status: Phase 2 approved; first ingress prototype implemented, October 22, 2026.** This development increment checks administrator authorization only. Certificate issuance and Pangolin changes remain unavailable pending real Supervisor ingress acceptance. No image or public release has been published.
 
-The source, lockfile, app manifest and Dockerfile are in [pangolin_access](pangolin_access/README.md). See [local development](docs/development.md) and [prototype validation results](docs/phase-2-results.md). Container builds and real HA/Apple compatibility are not yet verified.
+The source, lockfile, app manifest and Dockerfile are in [pangolin_access](pangolin_access/README.md). Native amd64/aarch64 container builds and runtime checks passed on GitHub Actions. Real HA ingress and Apple compatibility remain unverified. See [local development](docs/development.md) and [prototype validation results](docs/phase-2-results.md).
+
+For the ingress-only prototype, add `https://github.com/partytimeexcellent/ha-pangolin-mtls` to Home Assistant's app repositories. Follow the [setup guide](pangolin_access/DOCS.md) before starting it. It cannot issue certificates or change Pangolin.
 
 The intended deployment is one Supervisor-managed container containing the dashboard, API, PKI, enrollment, database, and diagnostics. An existing Pangolin server and a connected site that can reach Home Assistant are prerequisites. No additional certificate service or Compose deployment is required.
 

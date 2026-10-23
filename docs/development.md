@@ -24,7 +24,7 @@ With Docker available, from the repository root:
 docker build --build-arg BUILD_ARCH=amd64 --tag ha-pangolin-prototype pangolin_access
 ```
 
-Build on the matching native architecture, or use an explicitly configured cross-build environment. HA's architecture name is `aarch64`; Node/Docker report `arm64`. The current CI workflow declares separate native amd64/aarch64 jobs. It builds but never publishes images and uses read-only repository permissions with pinned action revisions. A public GitHub repository is not configured yet, so the workflow has not run remotely.
+Build on the matching native architecture, or use an explicitly configured cross-build environment. HA's architecture name is `aarch64`; Node/Docker report `arm64`. The CI workflow uses separate native amd64/aarch64 jobs. It builds but never publishes images and uses read-only repository permissions with pinned action revisions. Initial checks passed on [GitHub Actions](https://github.com/partytimeexcellent/ha-pangolin-mtls/actions/runs/39898052083); consult [recorded results](phase-2-results.md) for the tested commit and remaining gates.
 
 The CI smoke script uses an empty `/data` tmpfs and a synthetic non-secret configuration to run the real entrypoint. It checks privilege dropping, state permissions and rejection of direct loopback HTTP before signaling graceful shutdown. It does not impersonate an ingress peer and does not certify a real Supervisor installation.
 
