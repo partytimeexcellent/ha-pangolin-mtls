@@ -1,6 +1,7 @@
 // Run inside the disposable CI container with an empty /data tmpfs.
 // This exercises the real entrypoint and socket; no trusted peer is fabricated.
 import assert from 'node:assert/strict';
+import { unzipSync } from 'fflate';
 import { writeFile, stat } from 'node:fs/promises';
 import { setTimeout as delay } from 'node:timers/promises';
 
@@ -26,11 +27,15 @@ try {
   const pki = await PkiService.open('/data/state/disposable-runtime-fixture');
   await pki.createAuthority('fixture');
   const issued = await pki.issue({ name: 'Disposable runtime fixture', platform: 'other', lifetimeDays: 1 }, 'fixture');
-  const bundle = pki.download(issued.id, issued.token, 'fixture');
+  const bundle = pki.download(issued.id, issued.token, 'fixture', 'zip');
+  const files = unzipSync(bundle);
+  assert.deepEqual(Object.keys(files), [`ha-device-${issued.id}.p12`]);
+  assert.ok(files[Object.keys(files)[0]].length > 1000);
+  files[Object.keys(files)[0]].fill(0);
   assert.ok(bundle.length > 1000);
   bundle.fill(0);
   await pki.close();
-  console.log('Runtime smoke check passed: root dropped, state private, direct HTTP denied, disposable CA/P12 generated.');
+  console.log('Runtime smoke check passed: root dropped, state private, direct HTTP denied, disposable CA and encrypted P12 ZIP generated.');
   process.kill(process.pid, 'SIGTERM');
 } catch {
   console.error('Runtime smoke check failed.');

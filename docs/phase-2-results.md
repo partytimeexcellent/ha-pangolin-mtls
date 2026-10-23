@@ -131,3 +131,11 @@ These results cover the probed fresh connections only. Alternate routes/edges, a
 | App restart persistence and continued client access | PASS |
 
 Published under the existing sanitized pass/fail permission. This owner-reported result does not establish backup restoration, disaster recovery, CA rotation or complete Phase 2 acceptance. No additional environment details are published.
+
+## Expiry and replacement increment — 0.1.0-dev.6
+
+Implemented certificate/CA expiry display, optional HA persistent notifications at 30/14/7/1 days and expiry, guided leaf replacement with explicit owner test confirmation, and single-use ZIP delivery of the encrypted P12. No live Pangolin configuration or production HA service call was made. Core API access is newly declared for notification delivery; notifications default off. Administrator discovery/setup, automatic device installation, CA rotation and mobile push are not included.
+
+Local typecheck/build and all 46 automated tests passed. New fixtures verify transactional v1-to-v2 migration with unchanged CA/history and invalidated exports, expiry thresholds, restart-safe notification deduplication, hourly retry after failure, clock reversal, suppression of older-record reminders only after confirmation, notification opt-in/shutdown ordering, fixed Core service transport, actual ZIP contents and P12 password verification, preserved authorization/CSRF, shared ZIP/P12 single-use redemption, confirmation gating/idempotence and unchanged old issuance records. Runtime dependency audit found zero known vulnerabilities at check time.
+
+A local Chromium simulation through synthetic ingress passed at phone width: explicit CA creation and issuance, hidden-by-default password, actual ZIP and P12 browser downloads, replacement prefill/guidance, checked test confirmation, visible older-identity validity warning, no horizontal page overflow, no browser exceptions and no local storage. These are fixture results, not real iOS replacement or HA notification-delivery acceptance. Native container verification is recorded separately after CI completes.

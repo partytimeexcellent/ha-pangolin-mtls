@@ -19,6 +19,8 @@ const errors: Record<string, string> = {
   PANGOLIN_NETWORK: 'The API could not be reached securely within the deadline. Check DNS, HTTPS certificate and network access.',
   CERTIFICATES_DISABLED: 'Enable certificate management in this app’s Configuration, then restart the app.',
   HTTPS_REQUIRED: 'Use an HTTPS Home Assistant origin for this operation.',
+  REPLACEMENT_INVALID: 'Choose an existing certificate to replace, or download the replacement before confirming its device test.',
+  CONFIRMATION_REQUIRED: 'Explicit confirmation is required.',
   CA_REQUIRED: 'Create the certificate authority first.',
   CA_ALREADY_EXISTS: 'A certificate authority already exists. Refresh this page.',
   PKI_BUSY: 'Another certificate operation is running. Wait and try again.',

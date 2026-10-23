@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.0-dev.6
+
+- Show certificate/CA expiry and guide device replacement with a fresh identity, import instructions and explicit owner test confirmation. Keep older certificates valid and suppress only their reminders after confirmation.
+- Add a one-use ZIP download containing the encrypted `.p12` for iPhone transfer. ZIP and bare P12 share one five-minute, actor-bound download capability; neither includes the password.
+- Add optional HA persistent expiry notifications at 30/14/7/1 days and expiry, with restart-safe deduplication and hourly retry. Off by default; no mobile push or automatic issuance/import.
+- Request Core API access for the fixed persistent-notification service. Retain the Supervisor token only in the notification sender when enabled; remove it from the process environment before child processes start.
+- Migrate storage to version 2. Take a protected backup before updating; earlier builds cannot open the migrated database. Pangolin configuration remains manual.
+
 ## 0.1.0-dev.5
 
 - Add read-only selected-resource inspection by exact organization, identifier and expected hostname.

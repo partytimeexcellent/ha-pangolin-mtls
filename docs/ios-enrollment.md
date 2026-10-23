@@ -6,7 +6,7 @@ Use this page after [preparing the CA and protected Pangolin resource](installat
 
 Open the HA app through an already working local/management connection as an allowlisted administrator. Under **Certificate authority and devices → Issue a device identity**, enter the device name, choose iOS/iPadOS and a lifetime, then select **Issue certificate**.
 
-Save the separately displayed password and select **Download .p12 once** before its five-minute expiry. Use a new identity for each device. Do not recreate the installation's CA or reconfigure Pangolin for each enrollment.
+Save the separately displayed password and select **Download iPhone ZIP once** (or **Download .p12 once** if no archive is needed) before its five-minute expiry. Use a new identity for each device. Do not recreate the installation's CA or reconfigure Pangolin for each enrollment.
 
 The package contains the device private key, its certificate and the public issuer certificate. It is not the public `.pem` that Pangolin trusts. Keep the package/password private and separate during transfer. A downloaded package is not proof of installation.
 
@@ -14,7 +14,7 @@ The package contains the device private key, its certificate and the public issu
 
 AirDropping a bare `.p12` may open iOS Settings for system-wide identity installation. Use an archive when transferring from a Mac:
 
-1. In Finder, right-click the device `.p12` and choose **Compress**.
+1. Download **iPhone ZIP** directly from the app. If you already chose the bare `.p12` instead, right-click it in Finder and choose **Compress**. Both app download buttons share one single-use permission.
 2. AirDrop the resulting `.zip` to the iPhone/iPad and save/open it in **Files**.
 3. Tap the ZIP in Files to extract it. The `.p12` is now available in the extracted folder.
 4. Leave the `.p12` in Files; select it from **inside Companion's file importer** rather than tapping it in Files.
@@ -45,6 +45,6 @@ Use [troubleshooting](troubleshooting.md) if import or connection fails. The Mac
 
 After import and connection verification, remove unnecessary `.p12`/ZIP copies and unwanted synced copies according to your backup policy. Retain the protected HA app backup containing CA state.
 
-If the temporary download expired, was consumed or was lost after restart, issue a fresh identity. The app does not retain a permanent downloadable package or recover its password. Replacing or reissuing an identity does not revoke the old leaf under the shared CA. Before expiry, issue and manually import a replacement; automatic renewal installation is not implemented.
+If the temporary download expired, was consumed or was lost after restart, issue a fresh identity. The app does not retain a permanent downloadable package or recover its password. Replacing or reissuing an identity does not revoke the old leaf under the shared CA. Before expiry, use **Replace certificate** and follow the [guided replacement steps](certificate-management.md#replace-a-device-certificate); automatic installation is not implemented.
 
 New devices need an existing management/local enrollment route. Do not add an unauthenticated provisioning exception to the protected hostname. For another person's device, transfer its encrypted package through a trusted method rather than sharing administrator access.

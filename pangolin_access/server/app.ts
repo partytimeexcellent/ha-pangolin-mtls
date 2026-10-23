@@ -5,6 +5,7 @@ import staticFiles from '@fastify/static';
 import rateLimit from '@fastify/rate-limit';
 import { z } from 'zod';
 import type { Options } from './config.js';
+import { ExpiryReminders, type SendNotice } from './reminders.js';
 import { PkiService } from './pki.js';
 import { PkiError } from './openssl.js';
 import { inspectPangolin, publicReader, PangolinError, type ReadJson } from './pangolin.js';
@@ -31,6 +32,7 @@ export async function createApp(options: Options, settings: {
   webRoot?: string;
   onAccessDenied?: (code: string) => void;
   pki?: PkiService;
+  notificationSender?: SendNotice;
   pangolinReader?: (base: string, key: string, signal: AbortSignal) => Promise<ReadJson>;
 } = {}) {
   const now = settings.now ?? Date.now;
@@ -38,6 +40,7 @@ export async function createApp(options: Options, settings: {
   let pangolinBusy = false;
   const admins = new Set(options.admin_user_ids);
   const pki = options.enable_certificate_management === true ? settings.pki : undefined;
+  const reminders = pki ? new ExpiryReminders(pki, options.enable_home_assistant_notifications ? settings.notificationSender : undefined, now) : undefined;
   function requirePki() {
     if (!pki) throw new PkiError('CERTIFICATES_DISABLED', 503);
     if (!options.home_assistant_origin.startsWith('https://')) throw new PkiError('HTTPS_REQUIRED', 403);
@@ -159,7 +162,7 @@ export async function createApp(options: Options, settings: {
 
   app.get('/api/pki', async () => {
     const service = requirePki();
-    return { authority: service.authority(), certificates: service.inventory() };
+    return { authority: service.authority(), certificates: service.inventory(), reminders: reminders!.status() };
   });
   app.get('/api/ca/certificate', async (_request, reply) => {
     return reply.type('application/x-pem-file').header('content-disposition', 'attachment; filename="ha-pangolin-ca.pem"')
@@ -174,16 +177,22 @@ export async function createApp(options: Options, settings: {
       name: z.string().trim().min(1).max(80).regex(/^[^\x00-\x1f\x7f]+$/),
       platform: z.enum(['ios', 'ipados', 'macos', 'other']),
       lifetimeDays: z.number().int().min(1).max(365).default(90),
+      replacesId: z.string().uuid().optional(),
     }).safeParse(request.body);
     if (!input.success) throw new PkiError('INVALID_CERTIFICATE_INPUT', 400);
     return requirePki().issue(input.data, header(request, 'x-remote-user-id')!);
   });
+  app.post('/api/certificates/:id/confirm-replacement', async (request) => {
+    const params = z.strictObject({ id: z.string().uuid() }).safeParse(request.params);
+    if (!params.success || !z.strictObject({ confirm: z.literal(true) }).safeParse(request.body).success) throw new PkiError('CONFIRMATION_REQUIRED', 400);
+    return requirePki().confirmReplacement(params.data.id, header(request, 'x-remote-user-id')!);
+  });
   app.post('/api/certificates/:id/download', { config: { rateLimit: { max: 5, timeWindow: 60_000 } } }, async (request, reply) => {
     const params = z.strictObject({ id: z.string().uuid() }).safeParse(request.params);
-    const body = z.strictObject({ token: z.string().regex(/^[a-f0-9]{64}$/) }).safeParse(request.body);
+    const body = z.strictObject({ token: z.string().regex(/^[a-f0-9]{64}$/), format: z.enum(['p12', 'zip']).default('p12') }).safeParse(request.body);
     if (!params.success || !body.success) throw new PkiError('EXPORT_UNAVAILABLE', 410);
-    const data = requirePki().download(params.data.id, body.data.token, header(request, 'x-remote-user-id')!);
-    return reply.type('application/x-pkcs12').header('content-disposition', `attachment; filename="ha-device-${params.data.id}.p12"`).send(data);
+    const data = requirePki().download(params.data.id, body.data.token, header(request, 'x-remote-user-id')!, body.data.format);
+    return reply.type(body.data.format === 'zip' ? 'application/zip' : 'application/x-pkcs12').header('content-disposition', `attachment; filename="ha-device-${params.data.id}.${body.data.format}"`).send(data);
   });
 
   await app.register(staticFiles, {
@@ -192,6 +201,7 @@ export async function createApp(options: Options, settings: {
     cacheControl: false, etag: false, lastModified: false,
   });
   app.setNotFoundHandler(async (_request, reply) => reply.code(404).send({ code: 'API_NOT_FOUND', error: 'Not found.' }));
-  app.addHook('onClose', async () => { sessions.clear(); await settings.pki?.close(); });
+  app.addHook('onClose', async () => { sessions.clear(); await reminders?.close(); await settings.pki?.close(); });
+  app.addHook('onReady', async () => { reminders?.start(); });
   return app;
 }

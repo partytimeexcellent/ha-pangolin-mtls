@@ -1,6 +1,6 @@
 # Install HA Pangolin Access and connect iOS Companion
 
-This tutorial covers the working path in `0.1.0-dev.5`: create client certificates in the Home Assistant app, inspect Pangolin through its integration API, configure a dedicated mTLS resource manually, and import a device identity into Companion. The API instructions were checked against Pangolin 1.25.2. Later versions may change screens or contracts.
+This tutorial covers the working path in `0.1.0-dev.6`: create client certificates in the Home Assistant app, inspect Pangolin through its integration API, configure a dedicated mTLS resource manually, and import a device identity into Companion. The API instructions were checked against Pangolin 1.25.2. Later versions may change screens or contracts.
 
 This is an experimental prototype, not a production release. Initial client, cellular, restart and fresh TLS rejection checks have passed within the scope in [recorded results](phase-2-results.md). Backup restoration, rotation and broader compatibility remain separate release gates.
 
@@ -187,13 +187,13 @@ At this stage, findings for **existing trust**, **mTLS already on** and **target
 
 ## 7. Issue and import a device identity
 
-In the HA app, enter a device name, select iOS/iPadOS and choose a lifetime. The default is 90 days; supported bounds are 1–365 days within the CA's remaining validity. Select **Issue certificate**, save its separately displayed password, and select **Download .p12 once** within five minutes.
+In the HA app, enter a device name, select iOS/iPadOS and choose a lifetime. The default is 90 days; supported bounds are 1–365 days within the CA's remaining validity. Select **Issue certificate**, save its separately displayed password, and select **Download iPhone ZIP once** within five minutes (or the bare `.p12` option when an archive is unnecessary).
 
 A download can be redeemed once. Expiry, restart or a consumed/interrupted download does not provide a permanent recovery URL. Another issuance creates a fresh identity; it does not revoke the earlier one. Current limits are five pending packages and 100 issuance records.
 
 For Mac-to-iPhone transfer, use the ZIP method from the start:
 
-1. In Finder, right-click the `.p12` and choose **Compress**.
+1. Use the app’s **iPhone ZIP** download. If you already downloaded a bare `.p12`, right-click it in Finder and choose **Compress** instead.
 2. AirDrop the ZIP and save/open it in **Files** on the iPhone.
 3. In Files, tap the ZIP to extract its contents.
 4. Leave the extracted `.p12` there. Open Companion's own certificate importer and select the file from its picker.
@@ -236,3 +236,9 @@ Before certificate expiry, issue and import a replacement. There is no automatic
 Keep the API URL/org ID, chosen resource identifier/hostname and backend routing in your private installation notes. Keep API keys, package passwords and backups in appropriate protected storage; do not put them in public issues. Backups contain signing material. Verify restoration on an isolated HA instance before relying on recovery; an app restart is a separate check.
 
 For updates, read the changelog, take a protected backup, update in place and confirm the build footer changed after reopening the UI. Preserve the existing CA and app data. If recovery material is lost, plan a new CA and device reenrollment rather than weakening client-certificate enforcement.
+
+## Optional reminders and future replacements
+
+With dev.6, enable `enable_home_assistant_notifications` in app Configuration and restart if you want expiry reminders in the HA notification panel. Enable **Start on boot** to keep checks running after host restarts. Phone push delivery is not included. Existing certificates are tracked without recreating them. For the replacement workflow, notification behavior and pre-update backup instructions, see [certificate management](certificate-management.md#expiry-reminders).
+
+The app can now download the encrypted enrollment package as **iPhone ZIP**, avoiding the manual Finder compression step. Choose either ZIP or bare P12 once and keep the password separate. Pangolin setup, CA upload and initial test-resource activation are still manual. The administrator ID allowlist is still required; a user picker has not been added in this increment.

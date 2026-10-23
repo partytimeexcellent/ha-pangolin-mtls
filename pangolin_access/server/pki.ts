@@ -1,3 +1,4 @@
+import { zipSync } from 'fflate';
 import { DatabaseSync } from 'node:sqlite';
 import { createHash, createPrivateKey, generateKeyPair, randomBytes, randomUUID, X509Certificate } from 'node:crypto';
 import { promisify } from 'node:util';
@@ -16,7 +17,7 @@ type Authority = { certificate: string; encrypted_key: string };
 type Pending = { data: Buffer; expires: number; certificateId: string };
 export type CertificateSummary = {
   id: string; name: string; platform: string; serial: string; fingerprint: string;
-  issuedAt: string; expiresAt: string; exportStatus: string;
+  issuedAt: string; expiresAt: string; exportStatus: string; replacesId: string | null; replacementConfirmedAt: string | null;
 };
 
 async function privateDirectory(path: string) {
@@ -49,7 +50,7 @@ export class PkiService {
       await chmod(path, 0o600);
       db.exec('PRAGMA foreign_keys=ON; PRAGMA journal_mode=DELETE; PRAGMA synchronous=FULL; PRAGMA busy_timeout=5000;');
       const version = db.prepare('PRAGMA user_version').get()!.user_version;
-      if (version !== 0 && version !== 1) throw new PkiError('STORAGE_VERSION', 500);
+      if (version !== 0 && version !== 1 && version !== 2) throw new PkiError('STORAGE_VERSION', 500);
       if (version === 0) db.exec(`BEGIN IMMEDIATE;
         CREATE TABLE authority (id INTEGER PRIMARY KEY CHECK(id=1), certificate TEXT NOT NULL, encrypted_key TEXT NOT NULL) STRICT;
         CREATE TABLE certificates (id TEXT PRIMARY KEY, name TEXT NOT NULL, platform TEXT NOT NULL,
@@ -59,6 +60,11 @@ export class PkiService {
           actor TEXT NOT NULL, expires REAL NOT NULL, consumed INTEGER NOT NULL DEFAULT 0) STRICT;
         CREATE TABLE audit (id INTEGER PRIMARY KEY, time TEXT NOT NULL, actor TEXT NOT NULL, action TEXT NOT NULL, object_id TEXT NOT NULL) STRICT;
         PRAGMA user_version=1; COMMIT;`);
+      if (version === 0 || version === 1) db.exec(`BEGIN IMMEDIATE;
+        ALTER TABLE certificates ADD COLUMN replacesId TEXT REFERENCES certificates(id);
+        ALTER TABLE certificates ADD COLUMN replacementConfirmedAt TEXT;
+        CREATE TABLE reminders (object_id TEXT PRIMARY KEY, stage INTEGER, attemptedAt REAL NOT NULL) STRICT;
+        PRAGMA user_version=2; COMMIT;`);
       // Buffers never survive restart; invalidate every old capability before serving.
       db.exec(`BEGIN IMMEDIATE; UPDATE certificates SET exportStatus='unavailable' WHERE exportStatus='pending';
         UPDATE exports SET consumed=1; COMMIT;`);
@@ -105,7 +111,7 @@ export class PkiService {
   }
   inventory(): CertificateSummary[] {
     this.expire();
-    return this.db.prepare('SELECT id, name, platform, serial, fingerprint, issuedAt, expiresAt, exportStatus FROM certificates ORDER BY rowid DESC LIMIT 100').all() as unknown as CertificateSummary[];
+    return this.db.prepare('SELECT id, name, platform, serial, fingerprint, issuedAt, expiresAt, exportStatus, replacesId, replacementConfirmedAt FROM certificates ORDER BY rowid DESC LIMIT 100').all() as unknown as CertificateSummary[];
   }
   private audit(actor: string, action: string, id: string) {
     this.db.prepare('INSERT INTO audit(time,actor,action,object_id) VALUES(?,?,?,?)').run(new Date(this.now()).toISOString(), actor, action, id);
@@ -157,7 +163,7 @@ export class PkiService {
     });
   }
 
-  async issue(input: { name: string; platform: string; lifetimeDays: number }, actor: string) {
+  async issue(input: { name: string; platform: string; lifetimeDays: number; replacesId?: string }, actor: string) {
     return this.exclusive(async () => {
       this.expire();
       if (this.pending.size >= 5) throw new PkiError('EXPORT_CAPACITY');
@@ -165,6 +171,7 @@ export class PkiService {
       if (!Number.isInteger(input.lifetimeDays) || input.lifetimeDays < 1 || input.lifetimeDays > 365 ||
         input.name.trim().length < 1 || input.name.length > 80 || /[\x00-\x1f\x7f]/.test(input.name) ||
         !['ios', 'ipados', 'macos', 'other'].includes(input.platform)) throw new PkiError('INVALID_CERTIFICATE_INPUT', 400);
+      if (input.replacesId && !this.inventory().some((item) => item.id === input.replacesId)) throw new PkiError('REPLACEMENT_INVALID', 400);
       const authority = this.authorityRow();
       if (!authority) throw new PkiError('CA_REQUIRED');
       const ca = this.validateAuthority(authority);
@@ -201,8 +208,8 @@ export class PkiService {
         const expires = this.now() + ttl;
         this.db.exec('BEGIN IMMEDIATE');
         try {
-          this.db.prepare('INSERT INTO certificates VALUES(?,?,?,?,?,?,?,?,?)').run(id, input.name, input.platform,
-            cert.serialNumber, cert.fingerprint256, new Date(cert.validFrom).toISOString(), new Date(cert.validTo).toISOString(), pem, 'pending');
+          this.db.prepare('INSERT INTO certificates(id,name,platform,serial,fingerprint,issuedAt,expiresAt,certificate,exportStatus,replacesId) VALUES(?,?,?,?,?,?,?,?,?,?)').run(id, input.name, input.platform,
+            cert.serialNumber, cert.fingerprint256, new Date(cert.validFrom).toISOString(), new Date(cert.validTo).toISOString(), pem, 'pending', input.replacesId ?? null);
           this.db.prepare('INSERT INTO exports(token_hash,certificate_id,actor,expires) VALUES(?,?,?,?)').run(tokenHash, id, actor, expires);
           this.audit(actor, 'certificate_issued', id); this.db.exec('COMMIT');
         } catch (error) { this.db.exec('ROLLBACK'); data.fill(0); throw error; }
@@ -212,22 +219,44 @@ export class PkiService {
     });
   }
 
-  download(id: string, token: string, actor: string): Buffer {
+  download(id: string, token: string, actor: string, format: 'p12' | 'zip' = 'p12'): Buffer {
     this.expire();
     if (!/^[a-f0-9]{64}$/.test(token)) throw new PkiError('EXPORT_UNAVAILABLE', 410);
     const key = hash(token);
     const pending = this.pending.get(key);
     if (!pending || pending.certificateId !== id) throw new PkiError('EXPORT_UNAVAILABLE', 410);
+    const data = format === 'zip' ? Buffer.from(zipSync({ [`ha-device-${id}.p12`]: pending.data }, { level: 0 })) : Buffer.from(pending.data);
     this.db.exec('BEGIN IMMEDIATE');
     try {
       const result = this.db.prepare('UPDATE exports SET consumed=1 WHERE token_hash=? AND certificate_id=? AND actor=? AND expires>? AND consumed=0').run(key, id, actor, this.now());
       if (result.changes !== 1) throw new PkiError('EXPORT_UNAVAILABLE', 410);
       this.db.prepare("UPDATE certificates SET exportStatus='downloaded' WHERE id=?").run(id);
       this.audit(actor, 'package_downloaded', id); this.db.exec('COMMIT');
-    } catch (error) { this.db.exec('ROLLBACK'); throw error; }
-    const data = Buffer.from(pending.data);
+    } catch (error) { this.db.exec('ROLLBACK'); data.fill(0); throw error; }
     pending.data.fill(0); this.pending.delete(key);
     return data;
+  }
+  confirmReplacement(id: string, actor: string) {
+    const record = this.inventory().find((item) => item.id === id);
+    if (!record?.replacesId || record.exportStatus !== 'downloaded') throw new PkiError('REPLACEMENT_INVALID', 400);
+    this.db.exec('BEGIN IMMEDIATE');
+    try {
+      if (!record.replacementConfirmedAt) {
+        this.db.prepare('UPDATE certificates SET replacementConfirmedAt=? WHERE id=?').run(new Date(this.now()).toISOString(), id);
+        this.audit(actor, 'replacement_test_confirmed', id);
+      }
+      this.db.exec('COMMIT');
+    } catch (error) { this.db.exec('ROLLBACK'); throw error; }
+    return { confirmed: true };
+  }
+  reminderState(id: string) {
+    return this.db.prepare('SELECT stage, attemptedAt FROM reminders WHERE object_id=?').get(id) as { stage: number | null; attemptedAt: number } | undefined;
+  }
+  recordReminderAttempt(id: string, time: number) {
+    this.db.prepare('INSERT INTO reminders(object_id,stage,attemptedAt) VALUES(?,NULL,?) ON CONFLICT(object_id) DO UPDATE SET attemptedAt=excluded.attemptedAt').run(id, time);
+  }
+  recordReminderSent(id: string, stage: number) {
+    this.db.prepare('UPDATE reminders SET stage=? WHERE object_id=?').run(stage, id);
   }
   private expire() {
     for (const [key, pending] of this.pending) if (pending.expires <= this.now()) {

@@ -1,6 +1,7 @@
 import { readFile, mkdir, chown, chmod, lstat } from 'node:fs/promises';
 import { optionsSchema } from './config.js';
 import { createApp } from './app.js';
+import { homeAssistantNotifier } from './reminders.js';
 import { PkiService } from './pki.js';
 
 process.umask(0o077);
@@ -17,10 +18,13 @@ async function main() {
     process.setgid!(1000);
     process.setuid!(1000);
   }
+  const notificationToken = options.enable_home_assistant_notifications && options.enable_certificate_management ? process.env.SUPERVISOR_TOKEN : undefined;
   delete process.env.SUPERVISOR_TOKEN;
+  if (options.enable_home_assistant_notifications && options.enable_certificate_management && !notificationToken) throw new Error('Notification credential unavailable.');
   const pki = options.enable_certificate_management ? await PkiService.open('/data/state') : undefined;
   const app = await createApp(options, {
     pki,
+    notificationSender: notificationToken ? homeAssistantNotifier(notificationToken) : undefined,
     onAccessDenied: (code) => process.stdout.write(JSON.stringify({ event: 'access_denied', code }) + '\n'),
   });
   let stopping = false;
