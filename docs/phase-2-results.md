@@ -23,12 +23,12 @@ Environment: macOS arm64, Node 24.22.1, npm 11.19.1. Commands and setup are in [
 | --- | --- |
 | TypeScript server/UI/test checks | Passed |
 | Backend and production UI build | Passed |
-| 13 automated tests | Passed |
+| Automated tests | Initial 13 passed; diagnostic increment expanded coverage to 19 passing tests |
 | Locked dependency audit | 0 known vulnerabilities reported at check time; not an independent security review |
 | Manifest parsing/basic privilege review | Passed: two declared architectures, empty allowlist, no host ports or elevated API/network grants |
 | Docker/container build | Passed on GitHub Actions; Docker remains absent from this Mac |
 | Native amd64/aarch64 image/runtime | Passed on native GitHub runners, including privilege drop, private state directory and rejection of direct HTTP |
-| Browser/real Supervisor ingress (E1) | Not run; automated injection is narrower evidence |
+| Browser/real Supervisor ingress (E1) | Authorized access PASS; empty-allowlist denial PASS; access restoration PASS (owner-reported). Other E1 checks remain separately tracked. |
 | Certificate, Pangolin, Apple-client experiments E2–E7 | Not run; functionality not implemented in this increment |
 
 The test suite checks forged peer/forwarded headers, missing/non-allowlisted identity, default denial, path validation, status flags, successful protected POST, CSRF/origin/content-type failures, user/path session binding, deadline/restart invalidation, oversized/unexpected input, rate limiting, and production-asset/API path resolution. An initial test detected the static handler overriding no-store; disabling its cache header generation fixed the failure.
@@ -39,7 +39,17 @@ The test suite checks forged peer/forwarded headers, missing/non-allowlisted ide
 
 The owner reports that `0.1.0-dev.1` starts without logged errors and the UI loads, but Check my access returns the generic failure message. The owner confirms using the intended public HTTPS origin. This does not establish the cause or a passed E1 result. The old UI discarded response reasons and the server did not log access-denial codes.
 
-Increment `0.1.0-dev.2` adds fixed error codes, stage/status reporting, sanitized denial logging and a visible build version. It preserves the existing authorization boundary and keeps signing disabled. Local typecheck, production build and 19 automated tests passed. An additional isolated Chromium test using synthetic ingress forwarding confirmed a successful check for the matching origin and a visible `ORIGIN_MISMATCH` for a different configured origin. That simulation is not the owner's proxy/Supervisor path. Updated real-HA results remain pending installation; do not classify this as a confirmed fix of the underlying access failure.
+Increment `0.1.0-dev.2` adds fixed error codes, stage/status reporting, sanitized denial logging and a visible build version. It preserves the existing authorization boundary and keeps signing disabled. Local typecheck, production build and 19 automated tests passed. An additional isolated Chromium test using synthetic ingress forwarding confirmed a successful check for the matching origin and a visible `ORIGIN_MISMATCH` for a different configured origin. That simulation is not the owner's proxy/Supervisor path. [GitHub Actions run 39907903968](https://github.com/partytimeexcellent/ha-pangolin-mtls/actions/runs/39907903968) also passed tests/audit and both native container/runtime jobs for commit `89408b2`.
+
+Sanitized owner-reported acceptance results, published with explicit permission:
+
+| Check | Result |
+| --- | --- |
+| Authorized access | PASS |
+| Denial with empty allowlist | PASS |
+| Access restored after allowlist restoration | PASS |
+
+These results do not certify the complete E1 test matrix. Certificate signing remains disabled. No environment identifiers, user IDs, credentials, tokens or detailed system information are included in this acceptance update.
 
 Install this increment using [DOCS.md](../pangolin_access/DOCS.md), within the owner's authorized ingress-only scope. Confirm actual trusted identity forwarding, denial for wrong/missing users and non-Supervisor peers, nested assets/POST behavior, non-root operation, health and shutdown. Record versions and sanitized outcomes here. Do not record actual ingress tokens, cookies or user IDs.
 
