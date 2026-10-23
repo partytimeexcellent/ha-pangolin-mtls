@@ -2,7 +2,7 @@
 
 **Start with the [complete installation tutorial](https://github.com/partytimeexcellent/ha-pangolin-mtls/blob/main/docs/installation.md).** It covers enabling Pangolin's integration API, DNS/Traefik routing, exact key permissions, certificate trust and iOS Companion import. It also separates routine setup from advanced validation.
 
-This dev.5 prototype issues local client certificates and performs explicit read-only Pangolin checks. Configure Pangolin trust/resources manually through its dashboard. The app does not upload certificates, enable resources or edit HA's configuration.
+This dev.6 prototype issues local client certificates and performs explicit read-only Pangolin checks. Configure Pangolin trust/resources manually through its dashboard. The app does not upload certificates, enable resources or edit HA's configuration.
 
 ## First installation: short path
 
@@ -16,6 +16,12 @@ This dev.5 prototype issues local client certificates and performs explicit read
 8. Enable the prepared target/resource with mTLS on. Check rejection without a certificate, Companion access with the identity, and the intended external URL over cellular.
 
 The [tutorial](https://github.com/partytimeexcellent/ha-pangolin-mtls/blob/main/docs/installation.md) provides the exact configuration examples and expected results. The deeper invalid-certificate, protocol, rotation and restore experiments are not required for each new device.
+
+## Safari and Companion on the same iPhone
+
+One device identity can be used for both: import the `.p12` inside Companion, then install the same file through iOS **Settings → Profile Downloaded** or **General → VPN & Device Management** for Safari. Keep the package until both imports and connection checks succeed; one download can supply both installations. Use a different identity for each additional physical device. The package is not hardware-bound, and sharing it means both copies hold the same private key. Update and test both when replacing it.
+
+The Settings path installs an identity, not MDM enrollment. Safari must be tested separately; its compatibility with this project has not yet been verified. See the [full Safari and shared-identity instructions](https://github.com/partytimeexcellent/ha-pangolin-mtls/blob/main/docs/ios-enrollment.md#install-for-safari-through-ios-settings).
 
 ## App configuration
 

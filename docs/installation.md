@@ -199,9 +199,17 @@ For Mac-to-iPhone transfer, use the ZIP method from the start:
 4. Leave the extracted `.p12` there. Open Companion's own certificate importer and select the file from its picker.
 5. Enter that package's password in Companion.
 
-AirDropping a bare `.p12` may hand it to iOS Settings for device-wide installation. Installing there does not automatically provision Companion. ZIP avoids the bare-certificate handoff; cancel any pending Settings installation if you are using the app importer. [Apple's ZIP instructions](https://support.apple.com/en-us/102532)
+AirDropping a bare `.p12` may hand it to iOS Settings for device-wide installation. Installing there does not automatically provision Companion. ZIP avoids the bare-certificate handoff for Companion. Cancel an unwanted pending Settings installation if you only intend to use Companion. [Apple's ZIP instructions](https://support.apple.com/en-us/102532)
 
 Companion's inspected source supports certificate selection during onboarding and through a server's Connection/Client Certificate settings. Installed labels vary; preserve the existing working server/URL while configuring the new protected URL. Do not assume changing only the external URL proves it was used: an internal URL can still win on home Wi-Fi. See [iOS enrollment](ios-enrollment.md) for details.
+
+### Optional: Safari on the same iPhone
+
+You can use the same device `.p12` for both Safari and Companion when both should have the same access. After importing it inside Companion, open the same extracted file and complete installation through **Settings → Profile Downloaded** or **General → VPN & Device Management**. The two clients require separate imports; certificate installation does not enroll the phone in MDM. For Safari-only use, the bare `.p12` Settings handoff is the intended route.
+
+Keep the downloaded file until both imports succeed; the app still permits only one download. One shared identity has one private key and expiry date: compromise of either copy affects that identity, and the certificate alone cannot distinguish the two clients. It is not hardware-bound, so use a fresh identity for a different physical device. When replacing it, update and test both installations before confirming replacement.
+
+Follow the [Safari installation steps and shared-identity guidance](ios-enrollment.md#install-for-safari-through-ios-settings). After activation, test Safari at the protected URL over cellular, separately from Companion. Safari compatibility with this project remains unverified; do not treat Companion's recorded PASS as browser validation. Normal HA login and HTTPS server verification remain required.
 
 ## 8. Activate and perform the short installation checks
 
