@@ -123,3 +123,11 @@ Published under the existing sanitized pass/fail permission. These scoped fresh-
 | TLS 1.2 rejection of client certificate from unrelated CA | PASS |
 
 These results cover the probed fresh connections only. Alternate routes/edges, additional invalid-identity cases, existing sessions, restore/rotation and full release acceptance remain separate gates.
+
+## Sanitized owner-reported restart result
+
+| Check | Result |
+| --- | --- |
+| App restart persistence and continued client access | PASS |
+
+Published under the existing sanitized pass/fail permission. This owner-reported result does not establish backup restoration, disaster recovery, CA rotation or complete Phase 2 acceptance. No additional environment details are published.

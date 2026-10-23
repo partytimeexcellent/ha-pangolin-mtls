@@ -1,12 +1,12 @@
 # Incremental delivery plan
 
-Status: Phase 2 approved by the owner; first ingress increment implemented, October 22, 2026. Phase 3 remains gated on successful POC validation and owner review.
+Status: Phase 2 approved by the owner; certificate issuance, read-only integration inspection and initial client/edge tests implemented, October 23, 2026. Phase 3 remains gated on successful POC validation and owner review.
 
 ## Phase 1 — research and architecture
 
 Completed: official documentation review; Pangolin 1.25.1 public API/handler/source inspection; Apple Companion development-source review; capability classification; threat model; deployment, PKI, enrollment and recovery proposal; repository layout and experiment plan.
 
-Not completed or claimed: live server integration, installed Apple client validation, Supervisor authorization behavior, container builds, production readiness.
+At the end of Phase 1, live integration, installed Apple client validation, Supervisor authorization behavior, container builds and production readiness were not completed or claimed. Later scoped results are recorded under Phase 2.
 
 Owner decisions before Phase 2:
 
@@ -20,7 +20,7 @@ Phase 1 approval was provided by the owner with “proceed.” The architecture'
 
 ## Phase 2 — minimal proof of concept
 
-Current progress: ingress authorized/empty-allowlist/restored-access checks have owner-reported PASS results. Version `0.1.0-dev.3` adds default-off CA generation, leaf issuance, SQLite metadata and single-use password-protected PKCS#12 downloads. Local typecheck/build and 26 tests pass, including real disposable cryptography, restart and cold-copy recovery. Native CI and real-device checks for this new increment are tracked in [recorded results](docs/phase-2-results.md). Additional E1 cases, real Apple import and Pangolin integration remain pending. No Pangolin trust change is authorized by local issuance testing.
+Current progress: version `0.1.0-dev.5` includes default-off CA/leaf issuance and single-use encrypted PKCS#12 downloads, plus read-only Pangolin connection and selected-resource inspection. Local typecheck/build, 40 automated tests and both native container build/runtime jobs pass. Sanitized owner-reported PASS results cover selected ingress cases, initial client import/basic operation/cellular checks and app restart persistence. Fresh-connection missing-certificate and unrelated-CA rejection tests passed. See [recorded results](docs/phase-2-results.md) for scope and evidence. Manual Pangolin dashboard configuration was used for the separate test resource; the app has no remote write/activation workflow. Broader E1–E6 coverage, isolated backup restoration, rotation/session behavior and full release acceptance remain pending.
 
 Deliver in small reviewable commits:
 
