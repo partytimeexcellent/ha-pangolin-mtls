@@ -5,6 +5,8 @@ import staticFiles from '@fastify/static';
 import rateLimit from '@fastify/rate-limit';
 import { z } from 'zod';
 import type { Options } from './config.js';
+import { PkiService } from './pki.js';
+import { PkiError } from './openssl.js';
 
 const peer = '172.30.32.2';
 const sessionLifetime = 5 * 60_000;
@@ -26,10 +28,17 @@ export async function createApp(options: Options, settings: {
   now?: () => number;
   webRoot?: string;
   onAccessDenied?: (code: string) => void;
+  pki?: PkiService;
 } = {}) {
   const now = settings.now ?? Date.now;
   const sessions = new Map<string, Session>();
   const admins = new Set(options.admin_user_ids);
+  const pki = options.enable_certificate_management === true ? settings.pki : undefined;
+  function requirePki() {
+    if (!pki) throw new PkiError('CERTIFICATES_DISABLED', 503);
+    if (!options.home_assistant_origin.startsWith('https://')) throw new PkiError('HTTPS_REQUIRED', 403);
+    return pki;
+  }
   function deny(reply: FastifyReply, status: number, code: string, error: string) {
     // Only fixed application codes reach this callback; never forward request data.
     settings.onAccessDenied?.(code);
@@ -99,8 +108,8 @@ export async function createApp(options: Options, settings: {
   });
 
   app.get('/api/status', async () => ({
-    stage: 'ingress-prototype',
-    signingEnabled: false,
+    stage: pki ? 'certificate-prototype' : 'ingress-prototype',
+    signingEnabled: Boolean(pki),
     pangolinConfigured: false,
     liveIngressVerified: false,
   }));
@@ -109,7 +118,36 @@ export async function createApp(options: Options, settings: {
     if (!z.strictObject({}).safeParse(request.body).success) {
       return reply.code(400).send({ code: 'INVALID_CHECK_BODY', error: 'An empty JSON object is required.' });
     }
-    return { authorized: true, signingEnabled: false };
+    return { authorized: true, signingEnabled: Boolean(pki) };
+  });
+
+  app.get('/api/pki', async () => {
+    const service = requirePki();
+    return { authority: service.authority(), certificates: service.inventory() };
+  });
+  app.get('/api/ca/certificate', async (_request, reply) => {
+    return reply.type('application/x-pem-file').header('content-disposition', 'attachment; filename="ha-pangolin-ca.pem"')
+      .send(requirePki().publicCertificate());
+  });
+  app.post('/api/ca', { config: { rateLimit: { max: 2, timeWindow: 60_000 } } }, async (request) => {
+    if (!z.strictObject({ confirm: z.literal(true) }).safeParse(request.body).success) throw new PkiError('CONFIRMATION_REQUIRED', 400);
+    return { authority: await requirePki().createAuthority(header(request, 'x-remote-user-id')!) };
+  });
+  app.post('/api/certificates', { config: { rateLimit: { max: 3, timeWindow: 60_000 } } }, async (request) => {
+    const input = z.strictObject({
+      name: z.string().trim().min(1).max(80).regex(/^[^\x00-\x1f\x7f]+$/),
+      platform: z.enum(['ios', 'ipados', 'macos', 'other']),
+      lifetimeDays: z.number().int().min(1).max(365).default(90),
+    }).safeParse(request.body);
+    if (!input.success) throw new PkiError('INVALID_CERTIFICATE_INPUT', 400);
+    return requirePki().issue(input.data, header(request, 'x-remote-user-id')!);
+  });
+  app.post('/api/certificates/:id/download', { config: { rateLimit: { max: 5, timeWindow: 60_000 } } }, async (request, reply) => {
+    const params = z.strictObject({ id: z.string().uuid() }).safeParse(request.params);
+    const body = z.strictObject({ token: z.string().regex(/^[a-f0-9]{64}$/) }).safeParse(request.body);
+    if (!params.success || !body.success) throw new PkiError('EXPORT_UNAVAILABLE', 410);
+    const data = requirePki().download(params.data.id, body.data.token, header(request, 'x-remote-user-id')!);
+    return reply.type('application/x-pkcs12').header('content-disposition', `attachment; filename="ha-device-${params.data.id}.p12"`).send(data);
   });
 
   await app.register(staticFiles, {
@@ -119,12 +157,13 @@ export async function createApp(options: Options, settings: {
   });
   app.setNotFoundHandler(async (_request, reply) => reply.code(404).send({ code: 'API_NOT_FOUND', error: 'Not found.' }));
   app.setErrorHandler(async (_error, _request, reply) => {
+    if (_error instanceof PkiError) return reply.code(_error.statusCode).send({ code: _error.code, error: 'Certificate operation could not be completed.' });
     // Do not echo schema inputs, malformed request bodies or upstream errors.
     const status = _error instanceof Error && 'statusCode' in _error && typeof _error.statusCode === 'number'
       ? _error.statusCode : undefined;
     return reply.code(status && status >= 400 && status < 500 ? status : 500)
       .send({ code: status === 429 ? 'RATE_LIMITED' : 'REQUEST_FAILED', error: status === 429 ? 'Too many requests.' : 'Request could not be processed.' });
   });
-  app.addHook('onClose', async () => sessions.clear());
+  app.addHook('onClose', async () => { sessions.clear(); await settings.pki?.close(); });
   return app;
 }

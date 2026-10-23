@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 const sessionSchema = z.object({ sessionId: z.string().regex(/^[a-f0-9]{64}$/), csrfToken: z.string().regex(/^[a-f0-9]{64}$/) });
-const resultSchema = z.object({ authorized: z.literal(true), signingEnabled: z.literal(false) });
+const resultSchema = z.object({ authorized: z.literal(true), signingEnabled: z.boolean() });
 const messages: Record<string, string> = {
   INGRESS_PEER_REQUIRED: 'The request did not arrive through the trusted Supervisor connection.',
   USER_NOT_AUTHORIZED: 'Home Assistant did not supply an allowlisted user ID. Check the app configuration and reopen its Web UI.',
@@ -46,10 +46,11 @@ export async function checkAccess(fetcher: typeof fetch = fetch): Promise<string
       headers: { 'content-type': 'application/json', 'x-access-session': session.data.sessionId, 'x-csrf-token': session.data.csrfToken },
       body: '{}',
     });
-    if (!resultSchema.safeParse(await readResponse(authorization, stage)).success) {
+    const result = resultSchema.safeParse(await readResponse(authorization, stage));
+    if (!result.success) {
       throw new CheckError('Authorization request: the app returned an unexpected response.');
     }
-    return 'Authorization check passed. Certificate signing remains disabled.';
+    return result.data.signingEnabled ? 'Authorization check passed. Certificate management is enabled.' : 'Authorization check passed. Certificate signing remains disabled.';
   } catch (error) {
     return error instanceof CheckError ? `Check failed. ${error.message}`
       : `Check failed. ${stage}: the browser could not complete the request. Check connectivity or reopen the Web UI. (NETWORK_ERROR)`;
