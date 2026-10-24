@@ -85,12 +85,21 @@ export async function createApp(options: Options, settings: {
       return deny(reply, 403, 'INGRESS_PEER_REQUIRED', 'Ingress connection required.');
     }
     const user = header(request, 'x-remote-user-id');
-    if (!user || (!admins.has(user) && !(await settings.administrators?.authorized(user)))) {
+    const bootstrap = options.enable_administrator_setup === true && admins.size === 0 && settings.administrators?.needsSelection() === true;
+    const verifiedSetupAdmin = bootstrap && user && /^[a-f0-9]{32}$/.test(user) && options.home_assistant_origin.startsWith('https://')
+      && (await settings.administrators!.users()).some(candidate => candidate.id === user);
+    if (!user || (!admins.has(user) && !verifiedSetupAdmin && !(await settings.administrators?.authorized(user)))) {
       return deny(reply, 403, 'USER_NOT_AUTHORIZED', 'An explicitly authorized Home Assistant user is required.');
     }
     const path = header(request, 'x-ingress-path');
     if (!path || !ingressPath.test(path)) {
       return deny(reply, 400, 'INVALID_INGRESS_PATH', 'A valid ingress path is required.');
+    }
+    if (bootstrap) {
+      const route = request.url.split('?')[0]!;
+      const setupRoutes = ['/api/session', '/api/status', '/api/administration-status', '/api/authorization-check', '/api/administrators/list', '/api/administrators/save'];
+      const asset = (request.method === 'GET' || request.method === 'HEAD') && (route === '/' || route.startsWith('/assets/'));
+      if (!asset && !setupRoutes.includes(route)) return deny(reply, 403, 'ADMIN_SETUP_REQUIRED', 'Confirm administrator selection before using this operation.');
     }
     if (request.method !== 'GET' && request.method !== 'HEAD') {
       if (header(request, 'origin') !== options.home_assistant_origin) {
@@ -144,6 +153,18 @@ export async function createApp(options: Options, settings: {
     sessions.clear();
     return result;
   });
+
+  app.post('/api/administrators/finish', async (request) => {
+    if (!options.home_assistant_origin.startsWith('https://')) throw new AdministratorError('HTTPS_REQUIRED', 403);
+    if (!settings.administrators || !z.strictObject({}).safeParse(request.body).success) throw new AdministratorError('ADMIN_SELECTION_INVALID', 400);
+    const actor = header(request, 'x-remote-user-id')!;
+    const view = await settings.administrators.view(actor, [...admins]);
+    const result = await settings.administrators.save(actor, [...admins], { ids: view.ids, revision: view.revision }, true);
+    sessions.clear();
+    return result;
+  });
+
+  app.get('/api/administration-status', async () => ({ setupComplete: settings.administrators?.setupComplete() ?? false }));
 
   app.get('/api/status', async () => ({
     stage: pki ? 'certificate-prototype' : 'ingress-prototype',

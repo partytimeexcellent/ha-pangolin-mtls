@@ -2,7 +2,7 @@
 
 This tutorial covers the working path in `0.1.0-dev.9`: create client certificates in the Home Assistant app, optionally inspect Pangolin through its integration API, configure a dedicated mTLS resource manually, and import a device identity into Companion. The API instructions were checked against Pangolin 1.25.2. Later versions may change screens or contracts.
 
-This is an experimental prototype, not a production release. Initial client, cellular, restart and fresh TLS rejection checks have passed within the scope in [recorded results](phase-2-results.md). Backup restoration, rotation and broader compatibility remain separate release gates.
+This is an early-access version. See [release readiness](release-readiness.md) for the remaining checks before a production release. Initial client, cellular, restart and fresh TLS rejection checks have passed within the scope in [recorded results](phase-2-results.md). Backup restoration, rotation and broader compatibility remain separate release gates.
 
 ## Choose the path you need
 
@@ -44,7 +44,7 @@ https://github.com/partytimeexcellent/ha-pangolin-mtls
 
 Refresh the store, install **HA Pangolin Access**, and leave protection mode enabled. Source builds can take time. Local-folder installation is an alternative for development, described in [development.md](development.md).
 
-In the app's **Configuration**, set your administrator's actual HA user ID. Leave **Home Assistant External URL** blank to use HA's configured external URL, or enter the address you use to open this app as an override. Find the ID by opening the administrator's user details in HA user management; Advanced Mode may be needed. It is a 32-character ID, not their display name.
+In the app's **Configuration**, enable **Set up with your Home Assistant account** and leave **Recovery administrator IDs (optional)** empty. Sign in to HA as an active administrator. The app retrieves your account ID automatically; you do not need to copy it. Manual IDs remain an optional recovery alternative. Leave **Home Assistant URL override (optional)** blank to use HA's configured external URL, or enter the address you use to open this app as an override. For the optional manual recovery path, find the ID in HA user details; Advanced Mode may be needed. The example below illustrates that manual alternative.
 
 ```yaml
 admin_user_ids:
@@ -53,11 +53,11 @@ home_assistant_origin: ""
 enable_certificate_management: false
 ```
 
-The placeholder user ID must be replaced before saving. `home_assistant_origin` is the retained YAML key for **Home Assistant External URL**. A blank/missing value reads HA’s `external_url` at startup through the internal Core API; an entered value overrides it and bypasses discovery. The effective address and its source appear in the Web UI. Use only scheme, hostname and any nonstandard port, with no path, query or ingress token. Open this app using that same address. `https://ha.example.net` and `http://192.168.10.20:8123` are different origins.
+The placeholder user ID must be replaced before saving. `home_assistant_origin` is the retained YAML key for **Home Assistant URL override (optional)**. A blank/missing value reads HA’s `external_url` at startup through the internal Core API; an entered value overrides it and bypasses discovery. The effective address and its source appear in the Web UI. Use only scheme, hostname and any nonstandard port, with no path, query or ingress token. Open this app using that same address. `https://ha.example.net` and `http://192.168.10.20:8123` are different origins.
 
 Start the app, select **Open Web UI**, and select **Check my access**. The expected result is an authorization pass with signing disabled. Once that works, change `enable_certificate_management` to `true`, save and restart the app. Certificate management requires an HTTPS HA origin.
 
-For an ordinary installation, you do not need to remove your user ID and lock yourself out as we did during prototype validation. Keep the allowlist narrow; an empty allowlist denies everyone. The app also enforces ingress, session and request protections on its backend.
+For an ordinary installation, you do not need to remove your user ID and lock yourself out as we did during prototype validation. Keep the allowlist narrow; an empty ID list needs verified first-time setup or an eligible saved administrator. The app also enforces ingress, session and request protections on its backend.
 
 ### Automatic external URL and an editable override
 
@@ -141,11 +141,11 @@ https://api.pangolin.example.net/v1/docs/
 
 The base route should return a healthy response and `openapi.json` should return a large JSON API specification. A blank documentation page can be a Swagger asset/UI problem; if the JSON works, our app can proceed. `/api/v1/docs` on the dashboard hostname is not the integration documentation route. The final slash on `/docs/` is worth trying for relative assets, but is not a guaranteed fix for a blank page.
 
-The value to enter in our app is exactly the HTTPS base ending in **`/v1`**, without `/docs` or `/openapi.json`. This prototype accepts public DNS destinations with valid HTTPS certificates. It rejects private/reserved addresses, mixed public/private DNS answers, redirects and custom URL path prefixes.
+The value to enter in our app is exactly the HTTPS base ending in **`/v1`**, without `/docs` or `/openapi.json`. The app accepts public DNS destinations with valid HTTPS certificates. It rejects private/reserved addresses, mixed public/private DNS answers, redirects and custom URL path prefixes.
 
 ## 4. Create one organization API key with the correct reads
 
-Pangolin API forms are hidden by default under **Advanced: Pangolin setup and diagnostics**. For a short setup/troubleshooting routine, see [Pangolin connection checks](pangolin-connection-check.md). Daily access and local certificate management do not require a Pangolin API key.
+Pangolin API forms are hidden by default under **Pangolin connection checks**. For a short setup/troubleshooting routine, see [Pangolin connection checks](pangolin-connection-check.md). Daily access and local certificate management do not require a Pangolin API key.
 
 Create the key within the organization containing your new resource. Enable all seven permissions now to avoid adding them in separate troubleshooting rounds:
 
@@ -169,7 +169,7 @@ Add the API URL to this app's HA Configuration, save and restart:
 pangolin_api_url: "https://api.pangolin.example.net/v1"
 ```
 
-Expand **Advanced: Pangolin setup and diagnostics**. In **Pangolin setup and testing**, enter the organization ID and the full API key as provided by Pangolin, then select **Test API connection**. Do not add the word `Bearer`; the app does that. The key is used for that check only, cleared from the field, and not saved to app configuration or the database. Reenter it for another check.
+Expand **Pangolin connection checks**. In **Check your Pangolin connection**, enter the organization ID and the full API key as provided by Pangolin, then select **Check connection**. Do not add the word `Bearer`; the app does that. The key is used for that check only, cleared from the field, and not saved to app configuration or the database. Reenter it for another check.
 
 A pass confirms the scoped reads and expected response shapes. It does not prove target reachability or mTLS enforcement.
 
@@ -197,15 +197,15 @@ Compare **certificate fingerprints**, not the SHA-256 checksum of the `.pem` fil
 
 At this stage, findings for **existing trust**, **mTLS already on** and **targets already attached** are expected when they describe the configuration you just created. They are review reminders, not an instruction to delete the CA or recreate the resource. Unexpected trust, shared policy or identity/hostname mismatches must be resolved first.
 
-## 7. Issue and import a device identity
+## 7. Add a device and install its certificate
 
-In the HA app, enter a device name, select iOS/iPadOS and choose a lifetime. The default is 90 days; supported bounds are 1–365 days within the CA's remaining validity. Select **Issue certificate**, save its separately displayed password, and select **Download mTLS installer ZIP** within five minutes. iOS/iPadOS offer only **iOS mTLS installer.zip**, containing Home Assistant identity.p12 and Install for Safari.mobileconfig.
+In the HA app, enter a device name, select iOS/iPadOS and choose a lifetime. The default is 90 days; supported bounds are 1–365 days within the CA's remaining validity. Select **Create device certificate**, save its separately displayed password, and select **Download installer (.zip)** within five minutes. iOS/iPadOS offer only **iOS mTLS installer.zip**, containing Home Assistant identity.p12 and Install for Safari.mobileconfig.
 
 A download can be redeemed once. Expiry, restart or a consumed/interrupted download does not provide a permanent recovery URL. Another issuance creates a fresh identity; it does not revoke the earlier one. Current limits are five pending packages and 100 issuance records.
 
 For Mac-to-iPhone transfer, use the ZIP method from the start:
 
-1. Choose **Download mTLS installer ZIP** to receive **iOS mTLS installer.zip**.
+1. Choose **Download installer (.zip)** to receive **iOS mTLS installer.zip**.
 2. AirDrop the ZIP and save/open it in **Files** on the iPhone.
 3. In Files, tap the ZIP to extract its contents.
 4. Leave the extracted `.p12` there. Open Companion's own certificate importer and select the file from its picker.
@@ -249,7 +249,7 @@ Once the client import works, remove unnecessary temporary P12/profile/ZIP copie
 
 Reuse the installation's existing CA, API endpoint and Pangolin resource. Issue a **new identity for each device**, save its package/password, transfer it as a ZIP if needed, import it into that device's Companion, and check its protected connection over cellular. Do not create a new CA, re-upload trust or recreate the resource for each device.
 
-Before certificate expiry, issue and import a replacement. There is no automatic renewal installation or individual leaf revocation in this shared-CA prototype. Replacing a package does not invalidate copied or older certificates. See [certificate management](certificate-management.md).
+Before certificate expiry, issue and import a replacement. There is no automatic renewal installation or individual leaf revocation in this shared-CA setup. Replacing a package does not invalidate copied or older certificates. See [certificate management](certificate-management.md).
 
 ## What to retain
 
@@ -259,6 +259,6 @@ For updates, read the changelog, take a protected backup, update in place and co
 
 ## Optional reminders and future replacements
 
-With dev.6, turn on **Enable Home Assistant Notifications** (`enable_home_assistant_notifications` in YAML) in app Configuration and restart if you want expiry reminders in the HA notification panel. Enable **Start on boot** to keep checks running after host restarts. Phone push delivery is not included. Existing certificates are tracked without recreating them. For the replacement workflow, notification behavior and pre-update backup instructions, see [certificate management](certificate-management.md#expiry-reminders).
+With dev.6, turn on **Certificate expiry reminders** (`enable_home_assistant_notifications` in YAML) in app Configuration and restart if you want expiry reminders in the HA notification panel. Enable **Start on boot** to keep checks running after host restarts. Phone push delivery is not included. Existing certificates are tracked without recreating them. For the replacement workflow, notification behavior and pre-update backup instructions, see [certificate management](certificate-management.md#expiry-reminders).
 
-The app can now download the encrypted enrollment package as **iOS mTLS installer.zip**, avoiding the manual Finder compression step. For iOS/iPadOS, use the single installer ZIP download and keep the password separate. Pangolin setup, CA upload and initial test-resource activation are still manual. One configured administrator ID is still required for initial/recovery access. The new App administrators panel can select additional active HA administrators by name; actual Core permission acceptance needs validation.
+The app can now download the encrypted enrollment package as **iOS mTLS installer.zip**, avoiding the manual Finder compression step. For iOS/iPadOS, use the single installer ZIP download and keep the password separate. Pangolin setup, CA upload and initial test-resource activation are still manual. Verified administrator setup can retrieve the current ID automatically. Complete **Check my access → Choose administrators → Save administrators → Finish setup**. The administration card then stays collapsed. Actual Core permission acceptance needs validation.

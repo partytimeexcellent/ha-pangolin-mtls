@@ -4,9 +4,9 @@ Use this page after [preparing the CA and protected Pangolin resource](installat
 
 ## Issue one identity per device
 
-Open the HA app through an already working local/management connection as an allowlisted administrator. Under **Certificate authority and devices → Issue a device identity**, enter the device name, choose iOS/iPadOS and a lifetime, then select **Issue certificate**.
+Open the HA app through an already working local/management connection as an authorized app administrator. Under **Device certificates → Add a device**, enter the device name, choose iOS/iPadOS and a lifetime, then select **Create device certificate**.
 
-Save the separately displayed password and select **Download mTLS installer ZIP** before its five-minute expiry. Use a new identity for each device. Do not recreate the installation's CA or reconfigure Pangolin for each enrollment.
+Save the separately displayed password and select **Download installer (.zip)** before its five-minute expiry. Use a new identity for each device. Do not recreate the installation's CA or reconfigure Pangolin for each enrollment.
 
 The package contains the device private key, its certificate and the public issuer certificate. It is not the public `.pem` that Pangolin trusts. Keep the package/password private and separate during transfer. A downloaded package is not proof of installation.
 
@@ -28,7 +28,7 @@ Download once and keep the encrypted package available only until both intended 
 
 AirDropping a bare `.p12` may open iOS Settings for system-wide identity installation. Use an archive when transferring from a Mac:
 
-1. Choose **Download mTLS installer ZIP**. For iOS/iPadOS the app offers only this download, named **iOS mTLS installer.zip**.
+1. Choose **Download installer (.zip)**. For iOS/iPadOS the app offers only this download, named **iOS mTLS installer.zip**.
 2. AirDrop the resulting `.zip` to the iPhone/iPad and save/open it in **Files**.
 3. Tap the ZIP in Files to extract it. It contains **Home Assistant identity.p12** for Companion and **Install for Safari.mobileconfig** for Safari. Both wrap the same identity. Install only the file for the client you use, or both for both clients.
 4. Leave the `.p12` in Files; select it from **inside Companion's file importer** rather than tapping it in Files.

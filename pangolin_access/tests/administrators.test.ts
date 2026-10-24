@@ -76,3 +76,55 @@ test('WebSocket reader sends only authentication and fixed list command, rejects
   const rejected = coreUserDirectory('fixture-token', () => bad as unknown as WebSocket)();
   bad.message({ type: 'auth_invalid' }); await assert.rejects(rejected);
 });
+
+test('opt-in setup retrieves the current verified admin without IDs, saves explicitly and persists completion', async t => {
+  const dir = await mkdtemp(join(tmpdir(), 'picker-setup-')); t.after(() => rm(dir, { recursive: true, force: true }));
+  const file = join(dir, 'admins.json');
+  const directory = async () => eligibleUsers([raw(a), raw(b), raw(c, { group_ids: [] })]);
+  const service = await Administrators.open(file, directory);
+  const options = { admin_user_ids: [], enable_administrator_setup: true, home_assistant_origin: 'https://ha.test' };
+  const app = await createApp(options, { administrators: service }); t.after(() => app.close());
+  const headers = { 'x-remote-user-id': a, 'x-ingress-path': '/api/hassio_ingress/fixture_token_not_a_secret/' };
+  const request = { remoteAddress: '172.30.32.2', headers };
+  for (const user of [c, 'd'.repeat(32), `${a},${b}`, '']) {
+    assert.equal((await app.inject({ ...request, headers: { ...headers, 'x-remote-user-id': user }, url: '/api/session' })).statusCode, 403);
+  }
+  assert.equal((await app.inject({ ...request, remoteAddress: '127.0.0.1', url: '/api/session' })).statusCode, 403);
+  assert.equal((await app.inject({ ...request, url: '/api/pki' })).json().code, 'ADMIN_SETUP_REQUIRED');
+  const post = async (url: string, payload: Record<string, unknown>) => {
+    const session = (await app.inject({ ...request, url: '/api/session' })).json();
+    return app.inject({ ...request, method: 'POST', url, headers: { ...headers, origin: 'https://ha.test', 'x-access-session': session.sessionId, 'x-csrf-token': session.csrfToken }, payload });
+  };
+  assert.equal((await post('/api/administrators/finish', {})).statusCode, 403);
+  const view = (await post('/api/administrators/list', {})).json();
+  assert.equal(view.currentUserId, a);
+  assert.equal(service.needsSelection(), true, 'reading does not claim installation');
+  assert.equal((await post('/api/administrators/save', { ids: [b], revision: view.revision })).statusCode, 400, 'actor must retain access');
+  assert.equal((await post('/api/administrators/save', { ids: [a], revision: view.revision })).statusCode, 200);
+  assert.equal(service.needsSelection(), false);
+  assert.equal((await app.inject({ ...request, url: '/api/administration-status' })).json().setupComplete, false);
+  assert.equal((await post('/api/administrators/finish', {})).statusCode, 200);
+  const restored = await Administrators.open(file, directory);
+  assert.equal(restored.setupComplete(), true);
+  const restarted = await createApp(options, { administrators: restored }); t.after(() => restarted.close());
+  assert.equal((await restarted.inject({ ...request, headers: { ...headers, 'x-remote-user-id': b }, url: '/api/session' })).statusCode, 403, 'other HA admins cannot claim configured installation');
+  assert.equal((await restarted.inject({ ...request, url: '/api/administration-status' })).json().setupComplete, true);
+});
+
+test('setup stays closed without opt-in, with legacy configured IDs, on HTTP, and during directory failure', async t => {
+  const dir = await mkdtemp(join(tmpdir(), 'picker-gate-')); t.after(() => rm(dir, { recursive: true, force: true }));
+  const service = await Administrators.open(join(dir, 'admins.json'), async () => eligibleUsers([raw(a), raw(b)]));
+  const request = { remoteAddress: '172.30.32.2', headers: { 'x-remote-user-id': b, 'x-ingress-path': '/api/hassio_ingress/fixture_token_not_a_secret/' }, url: '/api/session' };
+  for (const options of [
+    { admin_user_ids: [], home_assistant_origin: 'https://ha.test' },
+    { admin_user_ids: [a], enable_administrator_setup: true, home_assistant_origin: 'https://ha.test' },
+    { admin_user_ids: [], enable_administrator_setup: true, home_assistant_origin: 'http://ha.test' },
+  ]) {
+    const app = await createApp(options, { administrators: service }); t.after(() => app.close());
+    assert.equal((await app.inject(request)).statusCode, 403);
+  }
+  const unavailable = await Administrators.open(join(dir, 'offline.json'), async () => { throw Error('private'); });
+  const app = await createApp({ admin_user_ids: [], enable_administrator_setup: true, home_assistant_origin: 'https://ha.test' }, { administrators: unavailable }); t.after(() => app.close());
+  const response = await app.inject(request);
+  assert.equal(response.statusCode, 503); assert.ok(!response.body.includes('private'));
+});

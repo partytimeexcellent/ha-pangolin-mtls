@@ -1,6 +1,6 @@
 # Certificate management and enforcement limits
 
-The current prototype implements CA creation, device certificate issuance, public certificate history and short-lived PKCS#12 delivery. Expiry tracking, optional reminders and guided replacement are available in dev.6; automatic renewal installation, retirement controls, CA rotation and standalone encrypted recovery export remain proposed. Start with the [installation tutorial](installation.md) for the current workflow.
+The app provides CA creation, device certificate issuance, public certificate history and short-lived PKCS#12 delivery. Expiry tracking, optional reminders and guided replacement are available in dev.6; automatic renewal installation, retirement controls, CA rotation and standalone encrypted recovery export remain proposed. Start with the [installation tutorial](installation.md) for the current workflow.
 
 Current issuance records include name/platform, serial, SHA-256 fingerprint, dates and package export status. Replacement records link the new identity to its older certificate and record an explicit owner test confirmation. A device may have multiple valid certificates after renewal. “Retired” means no further issuance/export is intended; it does not mean Pangolin rejects the existing certificate. Deleting a retired inventory entry cannot revoke a copied private key.
 
@@ -31,7 +31,7 @@ Fresh-handshake rejection is narrower than immediate loss of access. Test TLS se
 
 The implemented leaf default is 90 days. Use the replacement workflow below before expiry to create a fresh key/certificate and import its new package. There is no automatic Apple installation. Old and new leaves can both remain valid until expiry or issuer trust removal. Device inventory calculates expiry from the issued certificate, independently of client UI.
 
-Make a protected Supervisor backup including this app’s data and verify restoration in isolation. A separate encrypted CA recovery export with a user-held password is planned but is not available in this prototype. The current CA key is retained in app data and its backups; Pangolin receives public certificates only. Protect backups as access-granting credentials. Automatic-unlock storage and its limitations are explained in [SECURITY.md](../SECURITY.md#at-rest-encryption-and-startup).
+Make a protected Supervisor backup including this app’s data and verify restoration in isolation. A separate encrypted CA recovery export with a user-held password is planned but is not available in this version. The current CA key is retained in app data and its backups; Pangolin receives public certificates only. Protect backups as access-granting credentials. Automatic-unlock storage and its limitations are explained in [SECURITY.md](../SECURITY.md#at-rest-encryption-and-startup).
 
 Restore must check issuer/key consistency, metadata version and live Pangolin trust, invalidate outstanding enrollment tokens, and avoid automatically republishing trust. A restored old certificate record is not evidence that a device is authorized or blocked at the edge. Losing the CA without a usable backup requires a new CA and re-enrollment; it does not justify disabling mTLS.
 
@@ -46,7 +46,7 @@ The app now requests Core API permission for this feature, even when the option 
 ## Replace a device certificate
 
 1. In the inventory, choose **Replace certificate** beside the intended device. Review its name, platform and lifetime, then choose **Issue replacement**. A fresh key and password are generated under the existing CA.
-2. Save the password separately and choose **Download mTLS installer ZIP** within five minutes. For iOS/iPadOS this is the only offered format: **iOS mTLS installer.zip** includes Home Assistant identity.p12 and Install for Safari.mobileconfig for the same identity. Import the new package inside the intended app; on iPhone use the [Companion import guide](ios-enrollment.md).
+2. Save the password separately and choose **Download installer (.zip)** within five minutes. For iOS/iPadOS this is the only offered format: **iOS mTLS installer.zip** includes Home Assistant identity.p12 and Install for Safari.mobileconfig for the same identity. Import the new package inside the intended app; on iPhone use the [Companion import guide](ios-enrollment.md).
 3. If the same identity is installed in Safari and Companion on one iPhone, import the replacement into both places using their separate installation paths. Close/reopen each intended client and test the protected external hostname over cellular or another external network, avoiding a local fallback or existing connection. Normal Home Assistant login remains required.
 4. Under the replacement's inventory row, check **I imported this replacement and tested access**, then choose **Confirm replacement tested**. This records your observation and suppresses future reminders for the older record. It does not revoke the old identity or dismiss previously delivered notifications; dismiss those in HA.
 

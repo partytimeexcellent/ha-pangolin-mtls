@@ -9,6 +9,7 @@ const packageSchema = z.object({ id: z.string().uuid(), password: z.string(), to
 type Package = z.infer<typeof packageSchema>;
 
 export function CertificatePanel() {
+  const [adding, setAdding] = useState(false);
   const [enabled, setEnabled] = useState(false);
   const [inventory, setInventory] = useState<z.infer<typeof inventorySchema> | null>(null);
   const [busy, setBusy] = useState(false);
@@ -29,14 +30,14 @@ export function CertificatePanel() {
     return days <= 0 ? 'Expired' : `${days} day${days === 1 ? '' : 's'} left${days <= 30 ? ' — replacement due' : ''}`;
   }
   function replace(cert: z.infer<typeof certificateSchema>) {
-    setReplacing(cert); setName(cert.name); setPlatform(cert.platform); setDays(90);
-    setMessage('Step 1: issue a fresh identity. Step 2: import it on your device. Step 3: test a new connection, then confirm below.');
+    setAdding(true); setReplacing(cert); setName(cert.name); setPlatform(cert.platform); setDays(90);
+    setMessage('Create a replacement, install it on your device, then test access and confirm below.');
     document.getElementById('device-form')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
   async function confirmReplacement(id: string) {
     await action(async () => {
       await protectedPost(`./api/certificates/${id}/confirm-replacement`, { confirm: true });
-      await refresh(); setMessage('Your test confirmation was saved. Old-certificate reminders are suppressed; its certificate remains valid until expiry.');
+      await refresh(); setMessage('Your test confirmation was saved. Reminders for the old certificate are off. The old certificate remains valid until it expires.');
     });
   }
 
@@ -50,8 +51,8 @@ export function CertificatePanel() {
         const status = await checked(await fetch('./api/status', { cache: 'no-store', credentials: 'same-origin', redirect: 'error', signal: AbortSignal.timeout(10_000) }));
         const data = z.object({ signingEnabled: z.boolean() }).parse(await status.json());
         setEnabled(data.signingEnabled);
-        if (data.signingEnabled) { await refresh(); setMessage('Ready. No certificates are created automatically.'); }
-        else setMessage('Certificate management is off. Enable it in this app’s Configuration when ready.');
+        if (data.signingEnabled) { await refresh(); setMessage(''); }
+        else setMessage('Certificate creation is off. Turn on Enable certificate creation in Configuration, save and restart the app.');
       } catch { setMessage('Could not load certificate status. Reopen the Web UI or check your access.'); }
     })();
   }, []);
@@ -72,7 +73,7 @@ export function CertificatePanel() {
     catch (error) {
       // Only pki-api's fixed messages are displayed; never show raw parsing/network exceptions.
       setMessage(error instanceof Error && /\([A-Z_]+, HTTP \d+\)$/.test(error.message)
-        ? error.message : 'The operation did not complete. Reopen the Web UI and inspect the inventory before retrying.');
+        ? error.message : 'The operation did not complete. Reopen the Web UI and review your certificates before trying again.');
     } finally { setBusy(false); }
   }
   async function createAuthority() {
@@ -105,59 +106,59 @@ export function CertificatePanel() {
     });
   }
   return <section aria-labelledby="certificate-title">
-    <span className="badge">Local certificate prototype</span>
-    <h2 id="certificate-title">Certificate authority and devices</h2>
-    <p>Pangolin configuration is unchanged by these controls. Certificates grant remote access only when the server trusts their CA.</p>
-    <p role="status" aria-live="polite">{message}</p>
+    <div className="section-heading"><div><p className="eyebrow">YOUR DEVICES</p><h2 id="certificate-title">Device certificates</h2></div><span className="badge">{enabled ? 'Certificate creation on' : 'Certificate creation off'}</span></div>
+    <p>Create a certificate for each device, download it and install it in the app you use.</p>
+    {message && <p className="status-message" role="status" aria-live="polite">{message}</p>}
     {enabled && inventory && <>
-      <p>Home Assistant expiry reminders: {inventory.reminders.enabled ? 'enabled (persistent notifications)' : 'off — turn on Enable Home Assistant Notifications in Configuration'}. Checks run at startup and hourly while this app is running, at 30, 14, 7 and 1 day, then expiry.</p>
+      <div className="overview"><div><strong>{inventory.certificates.length}</strong><span>Certificates created</span></div><div><strong>{inventory.certificates.filter(cert => Date.parse(cert.expiresAt) - clock <= 30 * 86_400_000).length}</strong><span>Expiring soon or expired</span></div><div><strong>{inventory.reminders.enabled ? 'On' : 'Off'}</strong><span>Expiry reminders</span></div></div>
+      <details className="subdetails"><summary>Expiry reminder settings</summary><p>{inventory.reminders.enabled ? 'Reminders appear in the Home Assistant notification panel.' : 'Turn on Certificate expiry reminders in Configuration to receive reminders in Home Assistant.'} Checks run at startup and hourly while the app is running, at 30, 14, 7 and 1 day before expiry and when a certificate expires.</p></details>
       {inventory.reminders.deliveryFailed && <p role="alert">A reminder could not be delivered. The app will retry; review certificate dates here.</p>}
       {!inventory.authority ? <>
-        <p>The CA signing key is encrypted with a locally stored unlock secret. A full host or backup compromise can expose both.</p>
-        <label className="check"><input type="checkbox" checked={confirmed} onChange={(e) => setConfirmed(e.target.checked)} /> Create a dedicated local CA for this prototype</label>
-        <button disabled={busy || !confirmed} onClick={createAuthority}>Create certificate authority</button>
+        <div className="empty-state"><h3>Create your certificate authority</h3><p>This is the trusted issuer for your device certificates. Create it once, then add its public certificate to Pangolin before testing remote access.</p><details className="subdetails"><summary>How the signing key is stored</summary><p>The signing key is encrypted, with its unlock secret stored on the same system. Protect your Home Assistant host and backups: access to both files can expose the key.</p></details>
+        <label className="check"><input type="checkbox" checked={confirmed} onChange={(e) => setConfirmed(e.target.checked)} /> I’m ready to create a certificate authority for my devices</label>
+        <button disabled={busy || !confirmed} onClick={createAuthority}>Create certificate authority</button></div>
       </> : <>
-        <p>CA expires {new Date(inventory.authority.expiresAt).toLocaleDateString()} · {expiry(inventory.authority.expiresAt)}</p>
+        <details className="authority-details"><summary>Certificate authority</summary><p>Certificates work remotely after you add this authority to Pangolin’s trusted CAs.</p><p>Expires {new Date(inventory.authority.expiresAt).toLocaleDateString()} · {expiry(inventory.authority.expiresAt)}</p>
         <p className="fingerprint">SHA-256: {inventory.authority.fingerprint}</p>
         <a href="./api/ca/certificate" download="ha-pangolin-ca.pem">Download public CA certificate</a>
-        <p>Take a protected Home Assistant backup after CA creation. Separate encrypted recovery export and rotation are not implemented yet.</p>
-        <form id="device-form" onSubmit={issue}>
-          <h3>{replacing ? `Replace ${replacing.name}` : 'Issue a device identity'}</h3>
-          {replacing && <><p>The old identity remains usable. The new identity has a fresh key and password, signed by the same CA. No Pangolin trust change is needed when that CA is already trusted.</p><button type="button" disabled={busy} onClick={() => setReplacing(null)}>Cancel replacement</button></>}
-          <label>Device name<input value={name} onChange={(e) => setName(e.target.value)} required maxLength={80} autoComplete="off" /></label>
-          <label>Platform<select value={platform} onChange={(e) => setPlatform(e.target.value)}>
+        <p>Keep a protected Home Assistant backup. Separate recovery exports and CA rotation are not available in this app.</p></details>
+        <details className="add-device" open={adding || inventory.certificates.length === 0 || Boolean(replacing)} onToggle={event => setAdding(event.currentTarget.open)}>
+          <summary>{replacing ? `Replace ${replacing.name}` : 'Add a device'}</summary>
+          <form id="device-form" onSubmit={issue}>
+          {replacing && <><p>The old certificate will remain valid. Install the replacement and test a new connection before confirming it below.</p><button type="button" disabled={busy} onClick={() => setReplacing(null)}>Cancel replacement</button></>}
+          <label>Device name<input placeholder="e.g. Alex’s iPhone" value={name} onChange={(e) => setName(e.target.value)} required maxLength={80} autoComplete="off" /></label>
+          <div className="form-grid"><label>Device type<select value={platform} onChange={(e) => setPlatform(e.target.value)}>
             <option value="ios">iOS</option><option value="ipados">iPadOS</option><option value="macos">macOS</option><option value="other">Other</option>
           </select></label>
-          <label>Lifetime in days<input type="number" value={days} onChange={(e) => setDays(e.target.valueAsNumber)} min={1} max={365} required /></label>
-          <button disabled={busy || Boolean(bundle && !downloaded)} type="submit">{replacing ? 'Issue replacement' : 'Issue certificate'}</button>
-        </form>
+          <label>Valid for (days)<input type="number" value={days} onChange={(e) => setDays(e.target.valueAsNumber)} min={1} max={365} required /></label></div>
+          <button disabled={busy || Boolean(bundle && !downloaded)} type="submit">{replacing ? 'Create replacement' : 'Create device certificate'}</button>
+        </form></details>
       </>}
       {bundle && <aside>
-        <h3>Temporary enrollment package</h3>
-        <p>Safari profile name: {bundle.profileDisplayName}</p>
-        <p>Expires {new Date(bundle.expiresAt).toLocaleTimeString()}. Keep the package and password separate.</p>
+        <h3>Install on your device</h3>
+        <p>Safari installer: {bundle.profileDisplayName}</p>
+        <p>Download available until {new Date(bundle.expiresAt).toLocaleTimeString()}. Save the password separately before downloading.</p>
         <button onClick={() => setShowPassword(!showPassword)}>{showPassword ? 'Hide password' : 'Show package password'}</button>
         {showPassword && <p className="fingerprint"><code>{bundle.password}</code></p>}
-        {!['ios', 'ipados'].includes(bundle.certificate.platform) && <button onClick={() => download('p12')} disabled={busy || downloaded}>Download .p12 once</button>}
-        <button onClick={() => download('zip')} disabled={busy || downloaded}>{downloaded ? 'Installer downloaded' : 'Download mTLS installer ZIP'}</button>
-        <p>Extract the ZIP in Files. Import Home Assistant identity.p12 inside Companion. For Safari, open Install for Safari.mobileconfig and complete installation in Settings. You only need to install the file for the app you use. Keep the password separate.</p>
-        <p>The profile contains only the encrypted identity; it has no password, MDM enrollment or root trust settings. It is unsigned, so iOS may show Not Signed or Unverified. Review the expected name and identity before installing. ZIP adds no encryption. Actual iOS profile installation still needs verification.</p>
+        {!['ios', 'ipados'].includes(bundle.certificate.platform) && <button onClick={() => download('p12')} disabled={busy || downloaded}>Download certificate (.p12)</button>}
+        <button onClick={() => download('zip')} disabled={busy || downloaded}>{downloaded ? 'Installer downloaded' : 'Download installer (.zip)'}</button>
+        <ol className="install-steps"><li>Save the password somewhere safe.</li><li>Download and extract the installer ZIP.</li><li>For Companion, import <strong>Home Assistant identity.p12</strong> inside the app. For Safari on iPhone or iPad, open <strong>Install for Safari.mobileconfig</strong> and finish installation in Settings.</li></ol><p>Install only the file for the app you use. Downloading does not confirm installation.</p>
+        <details className="subdetails"><summary>About the Safari installer</summary><p>The profile contains the encrypted certificate and key, without its password. It does not enroll your device in management or change root trust. iOS may show Not Signed or Unverified because the profile is unsigned. Check its name and contents before installing. Safari profile installation has not yet been validated on a real device.</p></details>
         <p>Restarting the app or leaving this page can make a pending package unrecoverable. No reusable download link is created.</p>
       </aside>}
       {inventory.certificates.length > 0 && <>
-        <h3>Issued certificates</h3>
-        <div className="table-scroll"><table><thead><tr><th>Device</th><th>Expires</th><th>Export</th><th>Certificate identity</th><th>Replacement</th></tr></thead>
-          <tbody>{inventory.certificates.map((cert) => <tr key={cert.id}><td>{cert.name}<br />{cert.platform}</td>
-            <td>{new Date(cert.expiresAt).toLocaleDateString()}<br />{expiry(cert.expiresAt)}</td><td>{cert.exportStatus}</td>
-            <td className="fingerprint">Serial: {cert.serial}<br />SHA-256: {cert.fingerprint}</td>
-            <td>{inventory.certificates.some((item) => item.replacesId === cert.id && item.replacementConfirmedAt) ? <p>Replacement tested. This older certificate remains valid until expiry; reminders suppressed.</p> : <button disabled={busy || Boolean(bundle && !downloaded)} onClick={() => replace(cert)}>Replace certificate</button>}
+        <h3>Your certificates</h3>
+        <div className="certificate-list">{inventory.certificates.map((cert) => <article className="certificate-card" key={cert.id}><div className="section-heading"><div><h4>{cert.name}</h4><p className="muted">{({ ios: 'iPhone', ipados: 'iPad', macos: 'Mac', other: 'Other device' } as Record<string, string>)[cert.platform] ?? cert.platform}</p></div><span className="badge">{expiry(cert.expiresAt)}</span></div>
+            <p>Expires {new Date(cert.expiresAt).toLocaleDateString()} · {({ downloaded: 'Installer downloaded', pending: 'Download pending', expired: 'Download unavailable', unavailable: 'Download unavailable' } as Record<string, string>)[cert.exportStatus] ?? 'Download unavailable'}</p>
+            <details className="subdetails"><summary>Certificate details</summary><p className="fingerprint">Serial: {cert.serial}<br />SHA-256: {cert.fingerprint}</p></details>
+            <div className="certificate-actions">{inventory.certificates.some((item) => item.replacesId === cert.id && item.replacementConfirmedAt) ? <p>Replacement tested. This older certificate remains valid until expiry; reminders suppressed.</p> : <button disabled={busy || Boolean(bundle && !downloaded)} onClick={() => replace(cert)}>Replace certificate</button>}
             {cert.replacesId && <><p>Replaces {inventory.certificates.find((item) => item.id === cert.replacesId)?.name ?? 'an older identity'}.</p>
             {cert.replacementConfirmedAt ? <p>Device test confirmed.</p> : <><p>Import this identity into the intended app, close and reopen it and test access over cellular or another external network. Avoid an existing session or local connection.</p>
             <label className="check"><input type="checkbox" checked={Boolean(tested[cert.id])} onChange={(event) => setTested({ ...tested, [cert.id]: event.target.checked })} /> I imported this replacement and tested access</label>
             <button disabled={busy || !tested[cert.id] || cert.exportStatus !== 'downloaded'} onClick={() => confirmReplacement(cert.id)}>Confirm replacement tested</button></>}</>}
-            </td></tr>)}</tbody></table></div>
-        <p>These are issuance records, not verified enrollments. Issuing a replacement does not invalidate an older certificate.</p>
-        <details><summary>Can I revoke a certificate?</summary><p>Individual certificate revocation is not supported by the inspected Pangolin shared-CA setup. Replace certificate creates a new identity but does not block the old one. Removing an identity from your phone also cannot revoke a copied identity.</p><p>For a lost device, disabling the affected resource in Pangolin is broad emergency containment. Restoring access safely can require a new CA and re-enrollment of every trusted device. Never remove the final trusted CA to block access: Pangolin turns mTLS off when no CA remains. CA rotation and remote revocation controls are not implemented here.</p></details>
+            </div></article>)}</div>
+        <p>This list records certificates you created. Installation is not checked automatically. Replacements do not invalidate earlier certificates.</p>
+        <details><summary>Lost device or certificate removal</summary><p>Individual certificate revocation is not supported by the inspected Pangolin shared-CA setup. Replace certificate creates a new identity but does not block the old one. Removing an identity from your phone also cannot revoke a copied identity.</p><p>For a lost device, disabling the affected resource in Pangolin is broad emergency containment. Restoring access safely can require a new CA and re-enrollment of every trusted device. Never remove the final trusted CA to block access: Pangolin turns mTLS off when no CA remains. CA rotation and remote revocation controls are not implemented here.</p></details>
       </>}
     </>}
   </section>;

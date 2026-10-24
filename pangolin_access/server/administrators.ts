@@ -4,7 +4,7 @@ import { z } from 'zod';
 
 const id = z.string().regex(/^[a-f0-9]{32}$/);
 export const selectionSchema = z.strictObject({ ids: z.array(id).max(20), revision: z.string().uuid() });
-const stateSchema = selectionSchema.extend({ version: z.literal(1) });
+const stateSchema = selectionSchema.extend({ version: z.literal(1), setupComplete: z.boolean().optional() });
 export class AdministratorError extends Error {
   constructor(public code: string, public statusCode = 503) { super(code); }
 }
@@ -52,8 +52,9 @@ export function coreUserDirectory(token: string, connect = () => new WebSocket('
 }
 
 export class Administrators {
-  private state = { version: 1 as const, ids: [] as string[], revision: randomUUID() as string };
+  private state: z.output<typeof stateSchema> = { version: 1 as const, ids: [] as string[], revision: randomUUID() as string };
   private busy = false;
+  private initialized = false;
   private constructor(private file: string, private directory: UserDirectory) {}
   static async open(file: string, directory: UserDirectory) {
     const service = new Administrators(file, directory);
@@ -61,6 +62,7 @@ export class Administrators {
       const handle = await open(file, 'r');
       try {
         if ((await handle.stat()).size > 8192) throw new Error('Invalid administrator state');
+        service.initialized = true;
         service.state = stateSchema.parse(JSON.parse(await handle.readFile('utf8')));
       } finally { await handle.close(); }
     } catch (error) {
@@ -68,6 +70,8 @@ export class Administrators {
     }
     return service;
   }
+  needsSelection() { return !this.initialized; }
+  setupComplete() { return this.state.setupComplete === true; }
   has(user: string) { return this.state.ids.includes(user); }
   async users() {
     try { return await this.directory(); }
@@ -77,9 +81,9 @@ export class Administrators {
   async view(actor: string, configured: string[]) {
     const users = await this.users();
     if (!users.some(u => u.id === actor)) throw new AdministratorError('ADMIN_PRIVILEGE_REQUIRED', 403);
-    return { users, ids: this.state.ids, revision: this.state.revision, configuredIds: configured };
+    return { users, ids: this.state.ids, revision: this.state.revision, configuredIds: configured, currentUserId: actor };
   }
-  async save(actor: string, configured: string[], input: z.output<typeof selectionSchema>) {
+  async save(actor: string, configured: string[], input: z.output<typeof selectionSchema>, finish = false) {
     if (this.busy || input.revision !== this.state.revision) throw new AdministratorError('ADMIN_SELECTION_CHANGED', 409);
     this.busy = true;
     const temporary = `${this.file}.${randomUUID()}.tmp`;
@@ -89,11 +93,12 @@ export class Administrators {
           new Set(input.ids).size !== input.ids.length || (!configured.includes(actor) && !input.ids.includes(actor))) {
         throw new AdministratorError('ADMIN_SELECTION_INVALID', 400);
       }
-      const next = { version: 1 as const, ids: input.ids, revision: randomUUID() };
+      const next = { version: 1 as const, ids: input.ids, revision: randomUUID(), setupComplete: finish };
       const handle = await open(temporary, 'wx', 0o600);
       try { await handle.writeFile(JSON.stringify(next)); await handle.sync(); } finally { await handle.close(); }
       await rename(temporary, this.file);
       this.state = next;
+      this.initialized = true;
       return { saved: true };
     } finally { this.busy = false; await unlink(temporary).catch(() => {}); }
   }

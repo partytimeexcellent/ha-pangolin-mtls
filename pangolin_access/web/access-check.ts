@@ -3,10 +3,12 @@ import { z } from 'zod';
 const sessionSchema = z.object({ sessionId: z.string().regex(/^[a-f0-9]{64}$/), csrfToken: z.string().regex(/^[a-f0-9]{64}$/) });
 const resultSchema = z.object({ authorized: z.literal(true), signingEnabled: z.boolean() });
 const messages: Record<string, string> = {
+  ADMIN_DIRECTORY_UNAVAILABLE: 'Home Assistant could not verify administrator status. Check Core API access and try again.',
+  ADMIN_PRIVILEGE_REQUIRED: 'Sign in as an active Home Assistant administrator to set up this app.',
   INGRESS_PEER_REQUIRED: 'The request did not arrive through the trusted Supervisor connection.',
-  USER_NOT_AUTHORIZED: 'Home Assistant did not supply an allowlisted user ID. Check the app configuration and reopen its Web UI.',
+  USER_NOT_AUTHORIZED: 'Your account does not have app access. For first setup, turn on Set up with your Home Assistant account in Configuration and open the app as an HA administrator.',
   INVALID_INGRESS_PATH: 'The ingress path was missing or invalid. Reopen the app through Home Assistant.',
-  ORIGIN_MISMATCH: 'The browser address did not match Home Assistant External URL. Set its Configuration override to the scheme, hostname and port used to open this app.',
+  ORIGIN_MISMATCH: 'The browser address did not match Home Assistant URL override. Set its Configuration override to the scheme, hostname and port used to open this app.',
   ORIGIN_MISSING: 'The browser origin header did not reach the app. Check the ingress and reverse-proxy path.',
   ORIGIN_NULL: 'The browser sent an opaque origin. Check browser embedding and referrer-policy behavior.',
   JSON_REQUIRED: 'The request content type was changed or was not JSON.',
@@ -50,7 +52,7 @@ export async function checkAccess(fetcher: typeof fetch = fetch): Promise<string
     if (!result.success) {
       throw new CheckError('Authorization request: the app returned an unexpected response.');
     }
-    return result.data.signingEnabled ? 'Authorization check passed. Certificate management is enabled.' : 'Authorization check passed. Certificate signing remains disabled.';
+    return result.data.signingEnabled ? 'Authorization check passed. Certificate management is enabled.' : 'Authorization check passed. Certificate creation is off.';
   } catch (error) {
     return error instanceof CheckError ? `Check failed. ${error.message}`
       : `Check failed. ${stage}: the browser could not complete the request. Check connectivity or reopen the Web UI. (NETWORK_ERROR)`;

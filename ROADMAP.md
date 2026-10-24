@@ -52,3 +52,7 @@ Deferred: public enrollment service, automatic installation into clients, MDM/SC
 ## Administrator name picker
 
 See the [focused implementation plan](docs/administrator-picker.md): verified human administrator setup, bounded Core user-list connection, explicit saved ID selections with recovery, and first-run/migration tests. It needs no Pangolin permissions. The additional-administrator picker is included in combined dev.9; fresh-install sign-in remains future work. The configured recovery allowlist remains explicit, with no first-visitor claims.
+
+Dev.10 update: owner-authorized verified-current-administrator setup now avoids manual ID copying using an explicit opt-in and setup-only access until selection save. Access verification and selection share one card that collapses after confirmation. Real HA/Core/Supervisor acceptance remains pending; no Phase 3 or remote-write gate changes.
+
+Dev.11 refines the early-access interface and configuration language; it does not remove validation gates. See [release readiness](docs/release-readiness.md) for the concrete remaining work before a production release.

@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.1.0-dev.11
+
+- Refine configuration labels, setup, device creation and installation guidance. Remove development-phase headings from everyday screens while retaining an early-access release label.
+- Add responsive certificate cards, expiry overview, expandable issuer/details and a quieter returning-use layout in light and dark themes.
+- Keep the certificate panel mounted when app access is edited, preserving pending installer state.
+- Document remaining release gates separately. Authorization, download expiry/single-use controls and Pangolin write restrictions remain in place.
+
+## 0.1.0-dev.10
+
+- Add opt-in setup using the current Core-verified HA administrator, without copying user IDs. Setup-only access ends after explicit selection save; existing configured IDs retain their boundary.
+- Merge access verification and account selection. Finish setup confirms access and persists the collapsed administration view; daily use prioritizes certificates.
+- Preserve manual recovery IDs. Live HA/Core/Supervisor acceptance remains pending.
+
 ## 0.1.0-dev.9
 
 - Rename the configuration label to Home Assistant External URL while preserving the `home_assistant_origin` key and existing explicit values.

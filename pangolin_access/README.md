@@ -1,4 +1,4 @@
-# HA Pangolin Access — certificate prototype
+# HA Pangolin Access
 
 Development build for testing administrator identity, dedicated CA creation and client PKCS#12 exports inside Home Assistant ingress. **Certificate management is off by default; Pangolin supports explicit read-only connection and selected-resource checks; remote configuration is not implemented.**
 

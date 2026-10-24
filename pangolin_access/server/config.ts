@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { apiUrlSchema } from './pangolin.js';
 
 const baseOptionsSchema = z.strictObject({
+  enable_administrator_setup: z.boolean().optional(),
   admin_user_ids: z.array(z.string().regex(/^[a-f0-9]{32}$/)).max(20),
   enable_certificate_management: z.boolean().optional(),
   enable_home_assistant_notifications: z.boolean().optional(),

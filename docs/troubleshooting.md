@@ -23,7 +23,7 @@ Applies to the dev.5 certificate manager and read-only Pangolin inspector. Start
 | `/v1` is healthy but docs are white | Try `/v1/docs/`, then `/v1/openapi.json`. A functioning JSON specification is sufficient for this app; the Swagger UI can be investigated separately. |
 | Unclear whether `http://pangolin:3003` needs replacing | It is Traefik's internal backend. Keep it for a standard Compose service named `pangolin` on the same Docker network with integration port 3003. Use your deployment's service name/port if different. |
 | Dashboard API route already exists | Keep it. Add integration routers/services under the existing `http` maps. Different exact host rules can coexist; avoid duplicate YAML map keys. |
-| `PANGOLIN_ADDRESS_BLOCKED` | The prototype requires a public DNS endpoint; private/reserved or mixed DNS answers are rejected. Private integration endpoints are not supported by this build. |
+| `PANGOLIN_ADDRESS_BLOCKED` | The app requires a public DNS endpoint; private/reserved or mixed DNS answers are rejected. Private integration endpoints are not supported by this build. |
 | `PANGOLIN_REDIRECT` | Enter the final HTTPS integration base ending in `/v1`. Redirects are refused rather than forwarding bearer credentials. |
 | Authentication rejected | Use the full key Pangolin supplied, without adding `Bearer`. Confirm that it has not expired/been removed and is the intended organization key. |
 | Permission denied | Save the exact seven read grants in the tutorial and use the organization where the key was created. The failure label identifies which read failed. |
@@ -78,10 +78,10 @@ Share the displayed fixed code/operation label, relevant sanitized settings and 
 
 Review [certificate management](certificate-management.md) for expiry, backup and shared-CA limitations. Inventory status and a downloaded package do not prove a device was installed or revoked.
 
-## Automatic Home Assistant External URL
+## Automatic Home Assistant URL override (optional)
 
 With dev.9, a blank `home_assistant_origin` uses HA's configured external URL at startup. Existing explicit values remain overrides; clear the field and restart if you want automatic selection. The Web UI shows the selected URL and source. The Configuration field stays blank in automatic mode because the app does not rewrite Supervisor options.
 
 If startup says the external URL is unavailable, configure it in HA's Network settings and start the app after Core is ready, or enter a manual app override. Discovery does not fall back to an internal URL or browser headers. If authorization reports an address mismatch, set the override to the exact scheme/hostname/port where you opened this app. That management address can differ from your new protected mTLS hostname. Keep HTTPS when certificate management is enabled.
 
-Pangolin diagnostic forms are hidden under **Advanced: Pangolin setup and diagnostics**. Expand them only when you want to run an explicit read-only check; they are not needed to keep certificate access or expiry reminders working.
+Pangolin diagnostic forms are hidden under **Pangolin connection checks**. Expand them only when you want to run an explicit read-only check; they are not needed to keep certificate access or expiry reminders working.

@@ -1,7 +1,7 @@
 name: HA Pangolin Access
-version: "0.1.0-dev.9"
+version: "0.1.0-dev.11"
 slug: pangolin_access
-description: "Development prototype for local client certificates and Pangolin mTLS planning"
+description: "Create device certificates for Home Assistant access through Pangolin mTLS"
 url: https://github.com/partytimeexcellent/ha-pangolin-mtls/tree/main/pangolin_access
 arch:
   - amd64
@@ -20,11 +20,13 @@ timeout: 120
 tmpfs: true
 homeassistant_api: true
 options:
+  enable_administrator_setup: false
   admin_user_ids: []
   enable_certificate_management: false
   enable_home_assistant_notifications: false
   home_assistant_origin: ""
 schema:
+  enable_administrator_setup: "bool?"
   pangolin_api_url: "url?"
   enable_certificate_management: "bool?"
   enable_home_assistant_notifications: "bool?"
