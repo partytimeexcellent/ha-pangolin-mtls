@@ -77,3 +77,11 @@ If a valid identity gets through TLS but HA does not load:
 Share the displayed fixed code/operation label, relevant sanitized settings and a concise observed result. Keep keys, package passwords, `.p12` files, private keys, ingress URLs, cookies, session/enrollment tokens and backups out of public issues. Avoid posting full response bodies or verbose request logs that may include headers or application cookies.
 
 Review [certificate management](certificate-management.md) for expiry, backup and shared-CA limitations. Inventory status and a downloaded package do not prove a device was installed or revoked.
+
+## Automatic Home Assistant External URL
+
+With dev.9, a blank `home_assistant_origin` uses HA's configured external URL at startup. Existing explicit values remain overrides; clear the field and restart if you want automatic selection. The Web UI shows the selected URL and source. The Configuration field stays blank in automatic mode because the app does not rewrite Supervisor options.
+
+If startup says the external URL is unavailable, configure it in HA's Network settings and start the app after Core is ready, or enter a manual app override. Discovery does not fall back to an internal URL or browser headers. If authorization reports an address mismatch, set the override to the exact scheme/hostname/port where you opened this app. That management address can differ from your new protected mTLS hostname. Keep HTTPS when certificate management is enabled.
+
+Pangolin diagnostic forms are hidden under **Advanced: Pangolin setup and diagnostics**. Expand them only when you want to run an explicit read-only check; they are not needed to keep certificate access or expiry reminders working.

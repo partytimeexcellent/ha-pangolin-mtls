@@ -20,7 +20,7 @@ Phase 1 approval was provided by the owner with “proceed.” The architecture'
 
 ## Phase 2 — minimal proof of concept
 
-Current progress: version `0.1.0-dev.8` simplifies iOS/iPadOS enrollment to one named installer ZIP, clarifies setup/testing API tools and revocation limits, and adds HA configuration labels to the existing expiry tracking, optional persistent notifications, guided replacement and ZIP delivery to default-off CA/leaf issuance and single-use encrypted PKCS#12 downloads, plus read-only Pangolin connection and selected-resource inspection. Dev.8 passed local checks, all 48 automated tests, dependency audit and native amd64/aarch64 container build/runtime checks. Actual iOS profile installation and Settings naming remain unverified; detailed results are recorded separately. Sanitized owner-reported PASS results cover selected ingress cases, initial client import/basic operation/cellular checks and app restart persistence. Fresh-connection missing-certificate and unrelated-CA rejection tests passed. See [recorded results](docs/phase-2-results.md) for scope and evidence. Manual Pangolin dashboard configuration was used for the separate test resource; the app has no remote write/activation workflow. Broader E1–E6 coverage, isolated backup restoration, rotation/session behavior and full release acceptance remain pending.
+Current progress: version `0.1.0-dev.9` adds automatic HA external-URL selection with a manual override, and hides optional Pangolin diagnostics behind Advanced. The app retains default-off local CA/leaf issuance, single-use encrypted iOS installers, expiry reminders and guided replacement. Local checks and all 52 tests passed; native validation is recorded in the results document. Remote Pangolin writes and CA rotation remain unimplemented. Sanitized owner-reported and directly observed checks cover scoped ingress, initial client access and selected TLS rejection cases; broader acceptance, isolated restoration and session/rotation behavior remain pending. See [recorded results](docs/phase-2-results.md).
 
 Deliver in small reviewable commits:
 
@@ -52,3 +52,5 @@ Deferred: public enrollment service, automatic installation into clients, MDM/SC
 ## Administrator name picker
 
 See the [focused implementation plan](docs/administrator-picker.md): verified human administrator setup, bounded Core user-list connection, explicit saved ID selections with recovery, and first-run/migration tests. It needs no Pangolin permissions. This remains future work; dev.8 retains the explicit allowlist and does not implement first-visitor claims or silent authorization expansion.
+
+Working-tree update: the existing-allowlist administrator picker is implemented locally; fresh-install sign-in remains deferred. See the implementation and live-validation checklist in [administrator-picker.md](docs/administrator-picker.md). This does not complete HA acceptance or authorize Phase 3.

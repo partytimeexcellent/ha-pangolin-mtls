@@ -54,7 +54,7 @@ test('validates ingress path and accepts IPv4-mapped ingress peer', async (t) =>
 test('serves only non-signing prototype status', async (t) => {
   const app = await fixture(t);
   const response = await app.inject({ url: '/api/status', headers, remoteAddress: address });
-  assert.deepEqual(response.json(), { stage: 'ingress-prototype', signingEnabled: false,
+  assert.deepEqual(response.json(), { stage: 'ingress-prototype', homeAssistantUrl: origin, homeAssistantUrlSource: 'configuration', signingEnabled: false,
     pangolinConfigured: false, liveIngressVerified: false });
   assert.equal((await app.inject({ url: '/api/ca', headers, remoteAddress: address })).statusCode, 404);
 });

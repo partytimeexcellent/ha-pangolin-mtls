@@ -1,6 +1,6 @@
 # Install HA Pangolin Access and connect iOS Companion
 
-This tutorial covers the working path in `0.1.0-dev.8`: create client certificates in the Home Assistant app, inspect Pangolin through its integration API, configure a dedicated mTLS resource manually, and import a device identity into Companion. The API instructions were checked against Pangolin 1.25.2. Later versions may change screens or contracts.
+This tutorial covers the working path in `0.1.0-dev.9`: create client certificates in the Home Assistant app, optionally inspect Pangolin through its integration API, configure a dedicated mTLS resource manually, and import a device identity into Companion. The API instructions were checked against Pangolin 1.25.2. Later versions may change screens or contracts.
 
 This is an experimental prototype, not a production release. Initial client, cellular, restart and fresh TLS rejection checks have passed within the scope in [recorded results](phase-2-results.md). Backup restoration, rotation and broader compatibility remain separate release gates.
 
@@ -8,7 +8,7 @@ This is an experimental prototype, not a production release. Initial client, cel
 
 | Task | Steps |
 | --- | --- |
-| First installation | Complete sections 1–8 below, including the short connection checks |
+| First installation | Complete sections 1–2 and 5–8, including the short connection checks; sections 3–4 are optional API diagnostics |
 | Another device on the same installation | Follow [Add another device](#add-another-device); reuse the existing CA and Pangolin resource |
 | App update | Preserve app data, read the changelog, update and reopen the UI; do not recreate the CA |
 | Investigating a problem | Use [Troubleshooting](troubleshooting.md) |
@@ -44,22 +44,32 @@ https://github.com/partytimeexcellent/ha-pangolin-mtls
 
 Refresh the store, install **HA Pangolin Access**, and leave protection mode enabled. Source builds can take time. Local-folder installation is an alternative for development, described in [development.md](development.md).
 
-In the app's **Configuration**, set your administrator's actual HA user ID and exact HA origin. Find the ID by opening the administrator's user details in HA user management; Advanced Mode may be needed. It is a 32-character ID, not their display name.
+In the app's **Configuration**, set your administrator's actual HA user ID. Leave **Home Assistant External URL** blank to use HA's configured external URL, or enter the address you use to open this app as an override. Find the ID by opening the administrator's user details in HA user management; Advanced Mode may be needed. It is a 32-character ID, not their display name.
 
 ```yaml
 admin_user_ids:
   - "REPLACE_WITH_YOUR_32_CHARACTER_HA_USER_ID"
-home_assistant_origin: "https://ha.example.net"
+home_assistant_origin: ""
 enable_certificate_management: false
 ```
 
-The placeholder user ID must be replaced before saving. `home_assistant_origin` includes the scheme, hostname and any nonstandard port, with no path, query or ingress token. Open HA using that same origin. `https://ha.example.net` and `http://192.168.10.20:8123` are different origins.
+The placeholder user ID must be replaced before saving. `home_assistant_origin` is the retained YAML key for **Home Assistant External URL**. A blank/missing value reads HA’s `external_url` at startup through the internal Core API; an entered value overrides it and bypasses discovery. The effective address and its source appear in the Web UI. Use only scheme, hostname and any nonstandard port, with no path, query or ingress token. Open this app using that same address. `https://ha.example.net` and `http://192.168.10.20:8123` are different origins.
 
 Start the app, select **Open Web UI**, and select **Check my access**. The expected result is an authorization pass with signing disabled. Once that works, change `enable_certificate_management` to `true`, save and restart the app. Certificate management requires an HTTPS HA origin.
 
 For an ordinary installation, you do not need to remove your user ID and lock yourself out as we did during prototype validation. Keep the allowlist narrow; an empty allowlist denies everyone. The app also enforces ingress, session and request protections on its backend.
 
+### Automatic external URL and an editable override
+
+The default is now automatic: `home_assistant_origin: ""`. Configure HA's external URL in its Network settings first, then start this app. The app reads only the selected `external_url` value from the Core configuration response; it does not persist or display other HA configuration. Discovery uses the existing Core API permission, not a Pangolin key. It runs at startup, not on each request, and never trusts a browser-supplied Host/Origin/referrer as the configuration source.
+
+The Supervisor configuration field stays blank in automatic mode; the app does not rewrite Supervisor-managed options to copy the detected value into that field. The Web UI shows the effective URL, and you can enter a different value in Configuration at any time. Existing explicit values survive updates unchanged; clear the field and restart to switch them to automatic mode. If Core is unavailable or has no valid external URL, startup stops with a fixed configuration message. Configure HA's external URL or enter an app override and restart; there is no guessed fallback. HTTPS remains required for certificate management.
+
+This is the address used to open the certificate app behind HA ingress, which can differ from the new protected mTLS hostname. If you open HA through a local address, VPN or another hostname, enter that address as the override. A URL mismatch still fails the origin/CSRF check. This app changes neither HA's external URL nor any Companion server URL.
+
 ## 3. Enable Pangolin's integration API
+
+**Optional advanced diagnostics.** Manual certificate setup through the Pangolin dashboard does not require enabling this API. Skip sections 3–4 and continue at [Create the CA](#5-create-the-ca-and-prepare-a-disabled-resource) if you do not want inspection tools.
 
 Skip the configuration changes if you already have a working integration endpoint and `openapi.json` loads.
 
@@ -135,7 +145,7 @@ The value to enter in our app is exactly the HTTPS base ending in **`/v1`**, wit
 
 ## 4. Create one organization API key with the correct reads
 
-For a short setup/troubleshooting routine, see [Pangolin connection checks](pangolin-connection-check.md). Daily access and local certificate management do not require a Pangolin API key.
+Pangolin API forms are hidden by default under **Advanced: Pangolin setup and diagnostics**. For a short setup/troubleshooting routine, see [Pangolin connection checks](pangolin-connection-check.md). Daily access and local certificate management do not require a Pangolin API key.
 
 Create the key within the organization containing your new resource. Enable all seven permissions now to avoid adding them in separate troubleshooting rounds:
 
@@ -159,7 +169,7 @@ Add the API URL to this app's HA Configuration, save and restart:
 pangolin_api_url: "https://api.pangolin.example.net/v1"
 ```
 
-In **Connect to Pangolin**, enter the organization ID and the full API key as provided by Pangolin, then select **Check Pangolin connection**. Do not add the word `Bearer`; the app does that. The key is used for that check only, cleared from the field, and not saved to app configuration or the database. Reenter it for another check.
+Expand **Advanced: Pangolin setup and diagnostics**. In **Pangolin setup and testing**, enter the organization ID and the full API key as provided by Pangolin, then select **Test API connection**. Do not add the word `Bearer`; the app does that. The key is used for that check only, cleared from the field, and not saved to app configuration or the database. Reenter it for another check.
 
 A pass confirms the scoped reads and expected response shapes. It does not prove target reachability or mTLS enforcement.
 
@@ -173,7 +183,7 @@ Select **Download public CA certificate**, which produces `ha-pangolin-ca.pem`. 
 
 In Pangolin, create a **separate HTTPS public resource** for `ha-mtls.example.net`, then disable it before attaching the real HA backend. Keep its target absent or disabled during preparation. Do not assign a shared resource policy. Choose the connected site and backend destination that can reach HA; if the UI creates a target, explicitly disable that target too. A disabled resource and a disabled target are two separate controls.
 
-In our app, select **Inspect a specific test resource**. Enter its exact Pangolin **resource identifier**, expected hostname without scheme/path, organization ID and key. Select **Inspect resource**. Its identifier is visible in Pangolin resource settings and is not necessarily its display name.
+If using the optional API diagnostics, open Advanced and select **Inspect resource configuration (optional)**. Enter its exact Pangolin **resource identifier**, expected hostname without scheme/path, organization ID and key. Select **Inspect resource**. Its identifier is visible in Pangolin resource settings and is not necessarily its display name.
 
 Expected preparation state: resource disabled, HTTPS on, inline policy, no CA trust yet, mTLS off. Review any existing authentication or rules before changing them. An attached disabled target still produces a presence finding; that does not mean it is enabled. Shared policies and incomplete results require manual review. The inspector does not inventory every redirect, wildcard overlap or manual Traefik router; use a dedicated hostname without conflicting routes.
 
@@ -181,7 +191,7 @@ Expected preparation state: resource disabled, HTTPS on, inline policy, no CA tr
 
 On that resource, open **Authentication → Other Methods → Client Certificate (mTLS)**. Upload `ha-pangolin-ca.pem`, enable the client-certificate requirement and save. If the interface requires opening/enabling the mTLS section before upload, complete the upload before saving the requirement. Keep the resource and target disabled. [Pangolin's mTLS guide](https://docs.pangolin.net/manage/access-control/mtls)
 
-Run **Inspect resource** again. Expect inline policy mTLS **on**, one CA entry, and resource/target **disabled**. Compare the returned CA fingerprint with the CA SHA-256 fingerprint in our app. Pangolin's certificate-detail screen is not needed; the inspector returns the metadata.
+If API diagnostics are enabled, run **Inspect resource** again. Expect inline policy mTLS **on**, one CA entry, and resource/target **disabled**. Compare the returned CA fingerprint with the CA SHA-256 fingerprint in our app. Pangolin's certificate-detail screen is not needed when using the inspector, which returns this metadata. If you skipped API setup, review the mTLS setting, resource/target and uploaded public CA in Pangolin’s dashboard, then perform the actual client checks in section 8; do not claim an API fingerprint comparison you did not run.
 
 Compare **certificate fingerprints**, not the SHA-256 checksum of the `.pem` file's bytes. Colons and letter case can be normalized; the hex digits must agree.
 

@@ -1,5 +1,7 @@
+import { Administrators, coreUserDirectory } from './administrators.js';
 import { readFile, mkdir, chown, chmod, lstat } from 'node:fs/promises';
-import { optionsSchema } from './config.js';
+import { startupOptionsSchema } from './config.js';
+import { resolveOptions, ExternalUrlError } from './resolve-options.js';
 import { createApp } from './app.js';
 import { homeAssistantNotifier } from './reminders.js';
 import { PkiService } from './pki.js';
@@ -7,7 +9,9 @@ import { PkiService } from './pki.js';
 process.umask(0o077);
 // Read Supervisor options before dropping privileges. No environment overrides or auth bypass.
 async function main() {
-  const options = optionsSchema.parse(JSON.parse(await readFile('/data/options.json', 'utf8')));
+  const input = startupOptionsSchema.parse(JSON.parse(await readFile('/data/options.json', 'utf8')));
+  const supervisorToken = process.env.SUPERVISOR_TOKEN;
+  delete process.env.SUPERVISOR_TOKEN;
   await mkdir('/data/state', { recursive: true, mode: 0o700 });
   const state = await lstat('/data/state');
   if (!state.isDirectory() || state.isSymbolicLink()) throw new Error('Invalid state directory.');
@@ -18,12 +22,14 @@ async function main() {
     process.setgid!(1000);
     process.setuid!(1000);
   }
-  const notificationToken = options.enable_home_assistant_notifications && options.enable_certificate_management ? process.env.SUPERVISOR_TOKEN : undefined;
-  delete process.env.SUPERVISOR_TOKEN;
+  const { options, source } = await resolveOptions(input, supervisorToken);
+  const notificationToken = options.enable_home_assistant_notifications && options.enable_certificate_management ? supervisorToken : undefined;
   if (options.enable_home_assistant_notifications && options.enable_certificate_management && !notificationToken) throw new Error('Notification credential unavailable.');
   const pki = options.enable_certificate_management ? await PkiService.open('/data/state') : undefined;
+  const administrators = supervisorToken ? await Administrators.open('/data/state/administrators.json', coreUserDirectory(supervisorToken)) : undefined;
   const app = await createApp(options, {
-    pki,
+    administrators,
+    pki, homeAssistantUrlSource: source,
     notificationSender: notificationToken ? homeAssistantNotifier(notificationToken) : undefined,
     onAccessDenied: (code) => process.stdout.write(JSON.stringify({ event: 'access_denied', code }) + '\n'),
   });
@@ -41,7 +47,9 @@ async function main() {
   process.stdout.write(`HA Pangolin Access started; certificate management ${pki ? 'enabled' : 'disabled'}.\n`);
 }
 
-main().catch(() => {
-  process.stderr.write('Startup failed. Check app options and /data permissions.\n');
+main().catch((error: unknown) => {
+  process.stderr.write(error instanceof ExternalUrlError
+    ? 'Startup failed: set Home Assistant External URL in this app Configuration, or configure a valid external URL in Home Assistant. HTTPS is required for certificate management.\n'
+    : 'Startup failed. Check app options and /data permissions.\n');
   process.exitCode = 1;
 });

@@ -1,5 +1,5 @@
 name: HA Pangolin Access
-version: "0.1.0-dev.8"
+version: "0.1.0-dev.9"
 slug: pangolin_access
 description: "Development prototype for local client certificates and Pangolin mTLS planning"
 url: https://github.com/partytimeexcellent/ha-pangolin-mtls/tree/main/pangolin_access
@@ -23,11 +23,11 @@ options:
   admin_user_ids: []
   enable_certificate_management: false
   enable_home_assistant_notifications: false
-  home_assistant_origin: "http://homeassistant.local:8123"
+  home_assistant_origin: ""
 schema:
   pangolin_api_url: "url?"
   enable_certificate_management: "bool?"
   enable_home_assistant_notifications: "bool?"
   admin_user_ids:
     - "match(^[a-f0-9]{32}$)"
-  home_assistant_origin: url
+  home_assistant_origin: "str?"

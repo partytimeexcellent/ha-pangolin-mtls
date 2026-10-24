@@ -44,7 +44,8 @@ export function PangolinPanel() {
   return <section aria-labelledby="pangolin-title">
     <h2 id="pangolin-title">Pangolin setup and testing</h2>
     <p>Use these read-only checks during first setup or troubleshooting. They do not connect your phone to HA or keep access running. Certificate issuance, replacement and expiry reminders do not need a Pangolin API key.</p>
-    <p>Set <strong>Pangolin API URL (Setup/Testing Only)</strong> in the app Configuration to your public HTTPS integration API URL ending in <code>/v1</code>, then restart.</p>
+    <p>Pangolin can manage public CA trust and mTLS settings through its API, but this app currently implements only inspection. It does not automate trust uploads, CA rotation, device installation or individual certificate revocation.</p>
+    <p>Set <strong>Pangolin API URL (Advanced Diagnostics)</strong> in the app Configuration to your public HTTPS integration API URL ending in <code>/v1</code>, then restart.</p>
     <p>For a basic connection test, use an organization-scoped key with Get Organization, List Sites, List Organization Domains and List Resources. The key is used for this check only and is not saved. Don’t paste it into chat.</p>
     <ol>
       <li>Set the integration API URL ending in /v1, save Configuration and restart.</li>

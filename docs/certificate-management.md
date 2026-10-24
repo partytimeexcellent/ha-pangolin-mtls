@@ -41,7 +41,7 @@ Expiry dates and days remaining are always visible in the certificate inventory,
 
 These appear in the Home Assistant notification panel, not as phone push notifications. Disabling the option stops future delivery; it does not dismiss existing notices. Device names appear in notifications; avoid private information in labels. The app must remain running for checks. Keep **Start on boot** enabled if you want reminders after host restarts; this experimental app's default boot setting is manual. Persistent notifications are not an independent monitoring service or automatic renewal.
 
-The app now requests Core API permission for this feature, even when the option is off. The grant is broader than notification-only access, although application code calls only the fixed notification service. It does not request auth or broad Supervisor access. [HA app communication](https://contributors.home-assistant.io/apps/guides/communication/), [persistent notifications](https://www.home-assistant.io/integrations/persistent_notification/).
+The app now requests Core API permission for this feature, even when the option is off. The grant is broader than notification-only access, although notification code calls only the fixed notification service. Since dev.9, automatic external-URL selection can also read Core configuration at startup; an explicit URL override avoids that read. It does not request auth or broad Supervisor access. [HA app communication](https://contributors.home-assistant.io/apps/guides/communication/), [persistent notifications](https://www.home-assistant.io/integrations/persistent_notification/).
 
 ## Replace a device certificate
 

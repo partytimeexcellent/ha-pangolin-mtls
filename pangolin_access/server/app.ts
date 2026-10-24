@@ -1,3 +1,4 @@
+import { Administrators, AdministratorError, selectionSchema } from './administrators.js';
 import { downloadFilename } from './download-names.js';
 import { randomBytes, timingSafeEqual } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
@@ -29,7 +30,9 @@ function equalToken(left: string | undefined, right: string): boolean {
 }
 
 export async function createApp(options: Options, settings: {
+  administrators?: Administrators;
   now?: () => number;
+  homeAssistantUrlSource?: 'configuration' | 'home-assistant';
   webRoot?: string;
   onAccessDenied?: (code: string) => void;
   pki?: PkiService;
@@ -59,6 +62,7 @@ export async function createApp(options: Options, settings: {
   });
 
   app.setErrorHandler(async (_error, _request, reply) => {
+    if (_error instanceof AdministratorError) return reply.code(_error.statusCode).send({ code: _error.code, error: 'Administrator operation could not be completed.' });
     if (_error instanceof PangolinError) return reply.code(_error.statusCode).send({ code: _error.code, stage: _error.stage, error: 'Pangolin check could not be completed.' });
     if (_error instanceof PkiError) return reply.code(_error.statusCode).send({ code: _error.code, error: 'Certificate operation could not be completed.' });
     // Do not echo schema inputs, malformed request bodies or upstream errors.
@@ -81,7 +85,7 @@ export async function createApp(options: Options, settings: {
       return deny(reply, 403, 'INGRESS_PEER_REQUIRED', 'Ingress connection required.');
     }
     const user = header(request, 'x-remote-user-id');
-    if (!user || !admins.has(user)) {
+    if (!user || (!admins.has(user) && !(await settings.administrators?.authorized(user)))) {
       return deny(reply, 403, 'USER_NOT_AUTHORIZED', 'An explicitly authorized Home Assistant user is required.');
     }
     const path = header(request, 'x-ingress-path');
@@ -125,8 +129,26 @@ export async function createApp(options: Options, settings: {
     return { sessionId: id, csrfToken: csrf, expiresAt: time + sessionLifetime };
   });
 
+  app.post('/api/administrators/list', async (request) => {
+    if (!options.home_assistant_origin.startsWith('https://')) throw new AdministratorError('HTTPS_REQUIRED', 403);
+    if (!z.strictObject({}).safeParse(request.body).success) throw new AdministratorError('ADMIN_SELECTION_INVALID', 400);
+    if (!settings.administrators) throw new AdministratorError('ADMIN_DIRECTORY_UNAVAILABLE');
+    return settings.administrators.view(header(request, 'x-remote-user-id')!, [...admins]);
+  });
+  app.post('/api/administrators/save', async (request) => {
+    if (!options.home_assistant_origin.startsWith('https://')) throw new AdministratorError('HTTPS_REQUIRED', 403);
+    if (!settings.administrators) throw new AdministratorError('ADMIN_DIRECTORY_UNAVAILABLE');
+    const input = selectionSchema.safeParse(request.body);
+    if (!input.success) throw new AdministratorError('ADMIN_SELECTION_INVALID', 400);
+    const result = await settings.administrators.save(header(request, 'x-remote-user-id')!, [...admins], input.data);
+    sessions.clear();
+    return result;
+  });
+
   app.get('/api/status', async () => ({
     stage: pki ? 'certificate-prototype' : 'ingress-prototype',
+    homeAssistantUrl: options.home_assistant_origin,
+    homeAssistantUrlSource: settings.homeAssistantUrlSource ?? 'configuration',
     signingEnabled: Boolean(pki),
     pangolinConfigured: false,
     liveIngressVerified: false,

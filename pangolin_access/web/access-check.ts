@@ -6,7 +6,7 @@ const messages: Record<string, string> = {
   INGRESS_PEER_REQUIRED: 'The request did not arrive through the trusted Supervisor connection.',
   USER_NOT_AUTHORIZED: 'Home Assistant did not supply an allowlisted user ID. Check the app configuration and reopen its Web UI.',
   INVALID_INGRESS_PATH: 'The ingress path was missing or invalid. Reopen the app through Home Assistant.',
-  ORIGIN_MISMATCH: 'The request origin did not match home_assistant_origin. Verify the configured scheme, hostname and port.',
+  ORIGIN_MISMATCH: 'The browser address did not match Home Assistant External URL. Set its Configuration override to the scheme, hostname and port used to open this app.',
   ORIGIN_MISSING: 'The browser origin header did not reach the app. Check the ingress and reverse-proxy path.',
   ORIGIN_NULL: 'The browser sent an opaque origin. Check browser embedding and referrer-policy behavior.',
   JSON_REQUIRED: 'The request content type was changed or was not JSON.',

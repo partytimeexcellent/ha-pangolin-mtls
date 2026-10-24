@@ -34,3 +34,7 @@ aside button { margin: 8px 8px 0 0; }
   .eyebrow, .badge, .footnote { color: #a5cbdf; }
   a { color: #87d7f6; }
 }
+
+.advanced { margin: 24px 0; }
+summary { cursor: pointer; min-height: 44px; padding: 10px 0; font-weight: 600; }
+summary:focus-visible { outline: 3px solid #ed9b20; outline-offset: 3px; }

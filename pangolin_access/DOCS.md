@@ -2,16 +2,16 @@
 
 **Start with the [complete installation tutorial](https://github.com/partytimeexcellent/ha-pangolin-mtls/blob/main/docs/installation.md).** It covers enabling Pangolin's integration API, DNS/Traefik routing, exact key permissions, certificate trust and iOS Companion import. It also separates routine setup from advanced validation.
 
-This dev.8 prototype issues local client certificates and performs explicit read-only Pangolin checks. Configure Pangolin trust/resources manually through its dashboard. The app does not upload certificates, enable resources or edit HA's configuration.
+This dev.9 prototype issues local client certificates and performs explicit read-only Pangolin checks. Configure Pangolin trust/resources manually through its dashboard. The app does not upload certificates, enable resources or edit HA's configuration.
 
 ## First installation: short path
 
 1. Add `https://github.com/partytimeexcellent/ha-pangolin-mtls` to HA's app repositories and install **HA Pangolin Access**. Leave protection mode enabled.
-2. Configure your HA administrator user ID and exact HTTPS HA origin. Start the app and select **Check my access**. Then enable certificate management, save and restart.
-3. Enable Pangolin's separate integration API and HTTPS route. Confirm `/v1/openapi.json` loads. Enter its base URL ending in `/v1` in this app's Configuration.
-4. Create an organization API key with all seven read permissions below. Use your organization ID and full key for the connection/inspection forms.
+2. Configure your HA administrator user ID. Leave **Home Assistant External URL** blank to use HA’s configured external URL, or enter an HTTPS override matching where you open this app. Start the app and select **Check my access**. Then enable certificate management, save and restart.
+3. Optional diagnostics: enable Pangolin’s separate integration API and HTTPS route only if you want API inspection. Otherwise skip to CA creation.
+4. Optional diagnostics: configure the integration URL and create an organization API key with the required reads below. Open **Advanced: Pangolin setup and diagnostics** only if you want to run the optional connection/inspection forms.
 5. Create the app's CA once and take a protected backup including app data. Download its **public CA certificate**.
-6. Prepare a dedicated HTTPS Pangolin resource with its resource and target disabled and no shared policy. Inspect it, upload the public CA through Pangolin's dashboard and enable mTLS. Inspect again and compare certificate fingerprints.
+6. Prepare a dedicated HTTPS Pangolin resource with its resource and target disabled and no shared policy. Review it in Pangolin’s dashboard, upload this app’s public CA and enable mTLS. If API diagnostics are available, inspect it and compare returned CA fingerprints as an additional check.
 7. Issue a device identity, save its password and choose **Download mTLS installer ZIP** within five minutes. AirDrop it, extract in Files, and import the `.p12` from inside Companion. For iOS/iPadOS, this is the only offered download and is named **iOS mTLS installer.zip**.
 8. Enable the prepared target/resource with mTLS on. Check rejection without a certificate, Companion access with the identity, and the intended external URL over cellular.
 
@@ -28,16 +28,16 @@ For Safari only, install **Install for Safari.mobileconfig** from the ZIP; Compa
 ```yaml
 admin_user_ids:
   - "REPLACE_WITH_YOUR_32_CHARACTER_HA_USER_ID"
-home_assistant_origin: "https://ha.example.net"
+home_assistant_origin: ""
 enable_certificate_management: false
 pangolin_api_url: "https://api.pangolin.example.net/v1"
 ```
 
-Replace every placeholder. Use the exact HA scheme/hostname/port, with no path or ingress token; open HA using that origin. Initially leave certificate management off, verify access, then enable it explicitly. An empty allowlist denies everyone. The API URL is optional until you use Pangolin checks and must resolve to public addresses with valid HTTPS.
+Replace every placeholder. **Home Assistant External URL** uses HA’s configured `external_url` at startup when blank. An entered `home_assistant_origin` value overrides it; use the exact HA scheme/hostname/port with no path or ingress token. The Web UI shows the effective address and source. Existing explicit values are preserved; clear the field and restart to use automatic mode. If HA has no external URL or Core is unavailable, set a manual override or configure HA first, then restart. Open this app using the selected address. Initially leave certificate management off, verify access, then enable it explicitly. An empty allowlist denies everyone. The API URL is optional until you use Pangolin checks and must resolve to public addresses with valid HTTPS.
 
 ## API key permissions
 
-These reads are for setup/testing only. Basic connection testing needs four reads; optional resource inspection adds three. Daily operation needs none. Follow the [short Pangolin connection-check routine](https://github.com/partytimeexcellent/ha-pangolin-mtls/blob/main/docs/pangolin-connection-check.md).
+API forms are hidden by default under **Advanced: Pangolin setup and diagnostics**. These reads are for setup/testing only. Basic connection testing needs four reads; optional resource inspection adds three. Daily operation needs none. Follow the [short Pangolin connection-check routine](https://github.com/partytimeexcellent/ha-pangolin-mtls/blob/main/docs/pangolin-connection-check.md).
 
 | Category | Enable |
 | --- | --- |
@@ -78,3 +78,9 @@ Use **Replace certificate** to issue a fresh identity, import it inside Companio
 ## User-name picker
 
 The current configuration still requires IDs. The [administrator picker plan](https://github.com/partytimeexcellent/ha-pangolin-mtls/blob/main/docs/administrator-picker.md) explains the verified HA administrator setup, user-list connection and saved selections needed to replace manual ID copying. No additional Pangolin API permissions are needed.
+
+## API automation and the external URL
+
+Pangolin can upload/manage public CA trust and enable resource mTLS through its integration API. A future reviewed workflow could automate trust setup and CA rotation; the current app has not implemented those remote writes. Device identity issuance stays local, phone installation stays manual, and shared-CA individual revocation is unavailable. Keep API tools optional; daily use does not require a key.
+
+The automatic external-URL read uses the existing Core API permission, even if expiry notifications are off. It reads the fixed internal Core configuration endpoint, never the configured public URL, and does not modify HA or Supervisor settings. The name **Home Assistant External URL** is a user-facing label; `home_assistant_origin` remains the YAML key for compatibility and exact-origin request protection.

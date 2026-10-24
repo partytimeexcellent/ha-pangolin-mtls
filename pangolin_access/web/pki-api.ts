@@ -1,6 +1,10 @@
 import { z } from 'zod';
 
 const errors: Record<string, string> = {
+  ADMIN_DIRECTORY_UNAVAILABLE: 'Home Assistant could not supply administrator names. Check Core API permission and Core/Supervisor compatibility. Configured recovery IDs still work.',
+  ADMIN_PRIVILEGE_REQUIRED: 'Your account must be an active Home Assistant administrator to manage this selection.',
+  ADMIN_SELECTION_INVALID: 'Choose up to 20 eligible additional administrators and retain your own access. Configured IDs are managed in app Configuration.',
+  ADMIN_SELECTION_CHANGED: 'The selection changed. Load administrator names again before saving.',
   PANGOLIN_SEARCH_INCOMPLETE: 'The resource search exceeded the bounded result limit. No resource was selected.',
   PANGOLIN_SELECTION_NOT_FOUND: 'No unique exact resource identifier was found in this organization.',
   PANGOLIN_SELECTION_MISMATCH: 'The resource organization, identifier or hostname did not match your selection.',
@@ -30,7 +34,7 @@ const errors: Record<string, string> = {
   EXPORT_UNAVAILABLE: 'This package expired, was already downloaded, or is no longer available. Issue a new identity if needed.',
   INVALID_CERTIFICATE_INPUT: 'Enter a device name, a platform and a lifetime from 1 to 365 days.',
   SESSION_OR_CSRF_INVALID: 'Your session changed or expired. Reopen the app and try again.',
-  ORIGIN_MISMATCH: 'The browser origin does not match the configured Home Assistant origin.',
+  ORIGIN_MISMATCH: 'The browser address does not match Home Assistant External URL. Set the Configuration override to the address used to open this app.',
   ORIGIN_MISSING: 'The browser origin did not reach the app.',
   ORIGIN_NULL: 'The browser supplied an opaque origin.',
   USER_NOT_AUTHORIZED: 'This Home Assistant user is not allowed to manage certificates.',

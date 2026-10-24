@@ -6,8 +6,22 @@ import { writeFile, stat } from 'node:fs/promises';
 import { setTimeout as delay } from 'node:timers/promises';
 
 try {
+  const originalFetch = globalThis.fetch;
+  let coreReads = 0;
+  process.env.SUPERVISOR_TOKEN = 'disposable-runtime-token';
+  globalThis.fetch = async (url, init) => {
+    if (url === 'http://supervisor/core/api/config') {
+      coreReads++;
+      assert.equal(process.env.SUPERVISOR_TOKEN, undefined);
+      assert.equal(init.method, 'GET');
+      assert.equal(init.redirect, 'error');
+      assert.equal(init.headers.authorization, 'Bearer disposable-runtime-token');
+      return Response.json({ external_url: 'https://ha.example.test', latitude: 0 });
+    }
+    return originalFetch(url, init);
+  };
   await writeFile('/data/options.json', JSON.stringify({
-    admin_user_ids: ['a'.repeat(32)], home_assistant_origin: 'https://ha.example.test', enable_certificate_management: true,
+    admin_user_ids: ['a'.repeat(32)], home_assistant_origin: '', enable_certificate_management: true,
   }), { mode: 0o600 });
   await import('/app/dist/server/main.js');
   let response;
@@ -15,6 +29,8 @@ try {
     try { response = await fetch('http://127.0.0.1:8099/api/status'); break; }
     catch { await delay(100); }
   }
+  globalThis.fetch = originalFetch;
+  assert.equal(coreReads, 1);
   assert.ok(response, 'server must start');
   assert.equal(response.status, 403, 'loopback cannot bypass ingress');
   await response.arrayBuffer();

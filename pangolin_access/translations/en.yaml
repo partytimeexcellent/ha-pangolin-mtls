@@ -8,19 +8,21 @@ configuration:
     name: Enable Certificate Management
     description: >-
       Allow explicit CA creation, device issuance and replacement through authenticated ingress.
-      Requires an HTTPS Home Assistant Origin. Does not change Pangolin configuration.
+      Requires an HTTPS Home Assistant External URL. Does not change Pangolin configuration.
   enable_home_assistant_notifications:
     name: Enable Home Assistant Notifications
     description: >-
       Send certificate-expiry reminders to the Home Assistant notification panel.
       Requires certificate management and the app to remain running. Phone push is not included.
   home_assistant_origin:
-    name: Home Assistant Origin
+    name: Home Assistant External URL
     description: >-
-      Exact scheme, hostname and optional port used to open Home Assistant, such as
-      https://ha.example.net. Do not include a path, token or trailing ingress URL.
+      Leave blank to use the external URL configured in Home Assistant at startup.
+      Enter an override if you open this app at another address. Use only scheme, hostname
+      and optional port, such as https://ha.example.net, without a path or token.
+      The effective address appears in the Web UI. HTTPS is required for certificate management.
   pangolin_api_url:
-    name: Pangolin API URL (Setup/Testing Only)
+    name: Pangolin API URL (Advanced Diagnostics)
     description: >-
       Optional public HTTPS integration API URL ending in /v1. Used only for explicit
       setup and troubleshooting checks. Daily client access and certificate replacement do not need it.

@@ -2,7 +2,7 @@
 
 A proposed Home Assistant Supervisor app for managing device certificates and remote access through Pangolin mTLS.
 
-**Status: Phase 2 certificate prototype, October 23, 2026.** Version `0.1.0-dev.8` simplifies iOS enrollment to one clearly named installer ZIP, labels Pangolin tools for setup/testing and adds readable HA configuration labels. Local certificate management remains default-off; Pangolin checks are read-only. It cannot configure Pangolin. No prebuilt image or production release has been published.
+**Status: Phase 2 certificate prototype, October 23, 2026.** Version `0.1.0-dev.9` can use HA’s configured external URL automatically with an editable override, and hides Pangolin diagnostic forms behind an Advanced section. Local certificate management remains default-off; Pangolin checks are read-only. It cannot configure Pangolin. No prebuilt image or production release has been published.
 
 The source, lockfile, app manifest and Dockerfile are in [pangolin_access](pangolin_access/README.md). Native amd64/aarch64 container builds and runtime checks passed on GitHub Actions. Selected HA ingress and initial iOS Companion checks passed as owner-reported results; broader compatibility remains unverified. See [local development](docs/development.md) and [prototype validation results](docs/phase-2-results.md).
 
