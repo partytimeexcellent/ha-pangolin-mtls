@@ -12,7 +12,7 @@ export function AdministratorPanel() {
     try {
       const next = schema.parse(await (await protectedPost('./api/administrators/list', {})).json());
       setData(next); setIds(next.ids.filter(id => next.users.some(u => u.id === id))); setMessage('Choose additional app administrators, then save.');
-    } catch (error) { setMessage(error instanceof Error ? error.message : 'Could not load administrators.'); }
+    } catch (error) { setMessage(error instanceof Error && /\([A-Z_]+, HTTP \d+\)$/.test(error.message) ? error.message : 'Could not load administrator names. Check your access and try again.'); }
     finally { setBusy(false); }
   }
   async function save() {
@@ -21,7 +21,7 @@ export function AdministratorPanel() {
     try {
       await protectedPost('./api/administrators/save', { ids, revision: data.revision });
       setData(null); setMessage('Administrator selection saved.');
-    } catch (error) { setMessage(error instanceof Error ? error.message : 'Could not save administrators.'); }
+    } catch (error) { setMessage(error instanceof Error && /\([A-Z_]+, HTTP \d+\)$/.test(error.message) ? error.message : 'Could not save administrator selection. Reload names before retrying.'); }
     finally { setBusy(false); }
   }
   return <section aria-labelledby="administrators-title">

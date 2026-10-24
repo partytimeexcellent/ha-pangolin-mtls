@@ -77,7 +77,7 @@ Use **Replace certificate** to issue a fresh identity, import it inside Companio
 
 ## User-name picker
 
-The current configuration still requires IDs. The [administrator picker plan](https://github.com/partytimeexcellent/ha-pangolin-mtls/blob/main/docs/administrator-picker.md) explains the verified HA administrator setup, user-list connection and saved selections needed to replace manual ID copying. No additional Pangolin API permissions are needed.
+Initial setup still requires one configured ID. The new **App administrators** panel can then load active HA administrator names and explicitly save additional selections. The [administrator picker guide](https://github.com/partytimeexcellent/ha-pangolin-mtls/blob/main/docs/administrator-picker.md) explains eligibility checks, saved selections, recovery and the remaining first-run sign-in work. Actual Core/Supervisor permission acceptance still needs validation. No additional Pangolin API permissions are needed.
 
 ## API automation and the external URL
 

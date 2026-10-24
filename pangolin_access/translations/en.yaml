@@ -3,7 +3,8 @@ configuration:
     name: Authorized Administrator User IDs
     description: >-
       Home Assistant user IDs allowed to manage certificates. An empty list denies everyone.
-      User-name selection is not available yet; use IDs from Home Assistant user details.
+      Set at least one initial/recovery ID from Home Assistant user details.
+      The Web UI can then select additional active HA administrators by name.
   enable_certificate_management:
     name: Enable Certificate Management
     description: >-

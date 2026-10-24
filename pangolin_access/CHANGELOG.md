@@ -4,7 +4,8 @@
 
 - Rename the configuration label to Home Assistant External URL while preserving the `home_assistant_origin` key and existing explicit values.
 - Default new installations to automatic selection from HA's configured external URL through a fixed, bounded Core configuration read at startup. An explicit override wins; missing/invalid discovery fails closed. Show the effective URL and source in the authorized Web UI.
-- Remove the Supervisor token from the environment before discovery/child processes; retain it after startup only for enabled notifications. Core API permission now also serves URL discovery in automatic mode, even when notifications are off.
+- Remove the Supervisor token from the environment before discovery/child processes; retain it after startup for the separately requested administrator-directory client and enabled notifications. Core API permission now also serves URL discovery in automatic mode, even when notifications are off.
+- Include the separately requested additional-administrator name picker, with configured recovery IDs, explicit saves and fresh eligibility checks. Initial setup still needs one configured ID; live HA permission acceptance remains pending.
 - Hide Pangolin API forms by default under Advanced and clear form state on close. Explain supported future CA-trust automation separately from the current read-only app. No remote mutations, trust changes or metadata migration.
 
 ## 0.1.0-dev.8

@@ -1,6 +1,6 @@
 # Administrator name picker: implementation plan
 
-The current app still requires an explicit HA user ID allowlist. A name picker is feasible, but it is not implemented in dev.8. It manages who can administer this certificate app, not who receives an individual device certificate. Certificate display names are still device labels you enter yourself.
+Dev.9 includes a name picker for additional administrators after initial allowlist setup. A fresh installation still needs one explicit HA user ID; sign-in without ID copying remains future work. It manages who can administer this certificate app, not who receives an individual device certificate. Certificate display names are still device labels you enter yourself.
 
 Home Assistant exposes an administrator-only WebSocket command, `config/auth/list`. It returns IDs, display names, active status, system-account flags and groups. A group membership/owner check is needed to identify eligible administrators; it does not directly return an `is_admin` field. [HA source](https://github.com/home-assistant/core/blob/dev/homeassistant/components/config/auth.py).
 
@@ -13,3 +13,17 @@ Home Assistant exposes an administrator-only WebSocket command, `config/auth/lis
 5. **Test the boundary in real HA.** Cover ordinary users, forged identities, expired credentials, disabled/demoted accounts, empty allowlists, restart persistence and recovery. The Core token's ability to call an admin-only command must be verified on the actual Supervisor/Core combination; notification permission alone does not establish it.
 
 No Pangolin permission is involved. This is a focused HA authentication/onboarding increment; adding an HA configuration translation cannot turn an ID text field into a secure dynamic user picker.
+
+## Implemented dev.9 increment
+
+The dashboard now has **App administrators → Load administrator names → Save administrators**. Open it as a user already present in `admin_user_ids`. The picker verifies that the ingress identity matches an active, non-system HA owner or member of `system-admin`, using the server-side list response. An app token alone does not authorize the visitor. HTTPS is required for picker operations. This increment does not implement fresh-install sign-in: retain the initial configured ID.
+
+Configured IDs remain an independent recovery boundary, unchanged by saving. Additional IDs are stored in `/data/state/administrators.json` (version 1, 0600 under the private state directory), with atomic replacement and stale-edit rejection. These permissions do not encrypt the file or backups. A managed-only administrator must retain their own selection. Successful saves invalidate all app sessions. Additional selected users must still appear as eligible in a fresh directory read on every request, including downloads; disabled/deleted/demoted accounts and directory outages fail closed. Simultaneous directory reads share one connection without retaining a cached eligibility result. Configured recovery IDs retain their existing behavior even during a Core outage; remove obsolete recovery IDs explicitly in app Configuration.
+
+Only `config/auth/list` is sent after authentication to `ws://supervisor/core/websocket`. It uses the existing `homeassistant_api` permission. The token stays server-side and is removed from the environment before child processes start; this extends its in-memory use beyond optional notifications. The client has a five-second total deadline, validates a maximum 256 KiB completed text message and at most 1,000 accounts, and returns only eligible IDs and names. Native WebSocket framing buffers messages before application size validation. No Core or Pangolin write command is added.
+
+Contract inspected against [Core 2026.10.0 auth handler](https://github.com/home-assistant/core/blob/2026.10.0/homeassistant/components/config/auth.py) and [Supervisor 2026.10.0 proxy](https://github.com/home-assistant/supervisor/blob/2026.10.0/supervisor/api/proxy.py). The proxy authenticates the app and forwards to Core; actual command permission on the target installation remains unverified.
+
+Recovery: stop the app, set a known trusted user's ID in Supervisor's `admin_user_ids`, restart and open ingress as that user. Use the picker to correct additional selections. Do not edit Supervisor options files from the app. If the local selection file is corrupt or from an unsupported schema, startup refuses it; preserve a protected backup and restore a known-good file while stopped. No file-format migration or automatic first-visitor recovery occurs.
+
+Required live checks before acceptance: load names as the configured administrator; deny an ordinary configured user access to picker operations; add another administrator and verify access; restart and verify persistence; disable/demote the selected account and verify denial; remove it through recovery access; check wrong/missing identities, expired sessions, CSRF and real ingress paths. Record versions and sanitized outcomes separately. No live test or deployment was performed by this increment.
