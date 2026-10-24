@@ -20,7 +20,7 @@ Phase 1 approval was provided by the owner with “proceed.” The architecture'
 
 ## Phase 2 — minimal proof of concept
 
-Current progress: version `0.1.0-dev.9` adds automatic HA external-URL selection with a manual override, and hides optional Pangolin diagnostics behind Advanced. The app retains default-off local CA/leaf issuance, single-use encrypted iOS installers, expiry reminders and guided replacement. The combined dev.9 increment also includes the additional-administrator picker; initial setup still needs one configured ID. Native validation is recorded in the results document. Remote Pangolin writes and CA rotation remain unimplemented. Sanitized owner-reported and directly observed checks cover scoped ingress, initial client access and selected TLS rejection cases; broader acceptance, isolated restoration and session/rotation behavior remain pending. See [recorded results](docs/phase-2-results.md).
+Current progress: version `0.1.0-dev.9` adds automatic HA external-URL selection with a manual override, and hides optional Pangolin diagnostics behind Advanced. The app retains default-off local CA/leaf issuance, single-use encrypted iOS installers, expiry reminders and guided replacement. The combined dev.9 increment also includes the additional-administrator picker; initial setup still needs one configured ID. All 56 tests, dependency audit and native amd64/aarch64 build/runtime checks passed; details are recorded in the results document. Remote Pangolin writes and CA rotation remain unimplemented. Sanitized owner-reported and directly observed checks cover scoped ingress, initial client access and selected TLS rejection cases; broader acceptance, isolated restoration and session/rotation behavior remain pending. See [recorded results](docs/phase-2-results.md).
 
 Deliver in small reviewable commits:
 
@@ -52,4 +52,3 @@ Deferred: public enrollment service, automatic installation into clients, MDM/SC
 ## Administrator name picker
 
 See the [focused implementation plan](docs/administrator-picker.md): verified human administrator setup, bounded Core user-list connection, explicit saved ID selections with recovery, and first-run/migration tests. It needs no Pangolin permissions. The additional-administrator picker is included in combined dev.9; fresh-install sign-in remains future work. The configured recovery allowlist remains explicit, with no first-visitor claims.
-
