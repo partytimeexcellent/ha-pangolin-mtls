@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 const errors: Record<string, string> = {
-  ADMIN_SETUP_REQUIRED: 'Confirm and save your administrator selection in Set up administration first.',
+  ADMIN_SETUP_REQUIRED: 'Choose and save your administrator selection in Home Assistant setup first.',
   ADMIN_DIRECTORY_UNAVAILABLE: 'Home Assistant could not supply administrator names. Check Core API permission and Core/Supervisor compatibility. Configured recovery IDs still work.',
   ADMIN_PRIVILEGE_REQUIRED: 'Your account must be an active Home Assistant administrator to manage this selection.',
   ADMIN_SELECTION_INVALID: 'Choose up to 20 eligible additional administrators and retain your own access. Configured IDs are managed in app Configuration.',
@@ -10,8 +10,8 @@ const errors: Record<string, string> = {
   PANGOLIN_SELECTION_NOT_FOUND: 'No unique exact resource identifier was found in this organization.',
   PANGOLIN_SELECTION_MISMATCH: 'The resource organization, identifier or hostname did not match your selection.',
   PANGOLIN_SNAPSHOT_CHANGED: 'The resource changed or inconsistent results were returned during inspection. Check Pangolin and try again.',
-  PANGOLIN_URL_REQUIRED: 'Set Pangolin API URL in the app Configuration to your HTTPS integration API URL ending in /v1, then restart.',
-  PANGOLIN_INPUT: 'Enter the organization ID and API key.',
+  PANGOLIN_URL_REQUIRED: 'Enter Pangolin API URL in Pangolin setup. Use the public HTTPS integration API URL ending in /v1.',
+  PANGOLIN_INPUT: 'Enter a valid Pangolin API URL, organization ID and API key.',
   PANGOLIN_BUSY: 'Another Pangolin check is running. Wait and try again.',
   PANGOLIN_ADDRESS_BLOCKED: 'The API hostname must resolve only to public addresses. Private and reserved destinations are blocked.',
   PANGOLIN_AUTH_FAILED: 'Pangolin rejected the API key.',
@@ -26,7 +26,7 @@ const errors: Record<string, string> = {
   PANGOLIN_TRUST_FULL: 'This resource already has 20 trusted CAs. Review its trust in Pangolin.',
   PANGOLIN_WRITE_UNCERTAIN: 'The upload result is uncertain. Inspect this resource’s trusted CAs in Pangolin before trying again.',
   CA_INVALID: 'The local CA certificate is invalid or expired.',
-  CERTIFICATES_DISABLED: 'Turn on Enable certificate creation in Configuration, then restart the app.',
+  CERTIFICATES_DISABLED: 'Certificate management is unavailable. Check the app startup log and restart the app.',
   HTTPS_REQUIRED: 'Use an HTTPS Home Assistant origin for this operation.',
   REPLACEMENT_INVALID: 'Choose an existing certificate to replace, or download the replacement before confirming its device test.',
   CONFIRMATION_REQUIRED: 'Explicit confirmation is required.',

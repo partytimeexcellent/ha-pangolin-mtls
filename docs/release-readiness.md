@@ -1,12 +1,12 @@
 # Release readiness
 
-Updated October 30, 2026. Current working version: 0.1.0-dev.12, early access.
+Updated October 30, 2026. Current working version: 0.1.0-dev.13, early access.
 
 The daily interface now uses finished product language. That does not change the release status: a polished interface is one part of a production release. The [validation plan](validation-plan.md) defines the checks; [recorded results](phase-2-results.md) distinguishes local fixtures from actual HA/device/edge observations.
 
 ## What works today
 
-The app can create a dedicated certificate authority, issue encrypted device installers, track expiry, guide replacement and list Pangolin public resources and install its public CA on an explicitly selected resource. Opt-in first setup can retrieve the signed-in HA administrator's ID and save a selection without copying it. Selected ingress, Companion and fresh TLS rejection checks have recorded results. Certificate creation is default-off; installation and mTLS enablement and live enforcement testing require explicit manual actions.
+The app can create a dedicated certificate authority, issue encrypted device installers, track expiry, guide replacement and list Pangolin public resources and install its public CA on an explicitly selected resource. First setup can retrieve the signed-in HA administrator's ID and save a selection without copying it. Selected ingress, Companion and fresh TLS rejection checks have recorded results. Certificate creation requires verified administrator setup, an HTTPS Home Assistant URL and an explicit create action. Pangolin CA installation requires an explicit resource selection. mTLS enablement and live enforcement testing remain manual actions.
 
 ## Still pending before a production release
 
@@ -19,13 +19,12 @@ The app can create a dedicated certificate authority, issue encrypted device ins
 | Current build | Dev.11 code commit `4d0041c` passed pinned Node 24 checks and native amd64/aarch64 container/runtime checks in [CI run 40061038749](https://github.com/partytimeexcellent/ha-pangolin-mtls/actions/runs/40061038749). Installation and actual HA acceptance remain pending; later code changes need their own checks. |
 | Security and distribution | Complete source/dependency/container review, release packaging and provenance, a supported-version policy, license decision, private security reporting and release documentation. |
 
-Phase 3 continues to require successful POC validation and owner review. This refinement does not enable remote Pangolin writes, live infrastructure changes or deployment. Publishing a production release requires evidence for its claimed baseline; relabeling the build does not satisfy these gates.
+Phase 3 continues to require successful POC validation and owner review. Live infrastructure changes and deployment remain outside this release-readiness assessment. Publishing a production release requires evidence for its claimed baseline; relabeling the build does not satisfy these gates.
 
 ## Interface organization
 
-- **Set up app access** guides account verification and explicit administrator selection. After confirmation, the same section guides Pangolin resource selection and CA installation.
+- **Home Assistant setup** shows URL, administrator selection and access check, then collapses when complete. **Pangolin setup** shows exact API-key permissions, API URL, Organization ID, key, resources and CA installation; it collapses after installation.
 - **Device certificates** is the daily workspace: expiry overview, certificate cards, replacement and **Add a device**. Certificate authority details, reminder guidance and certificate identifiers expand on demand.
 - **Install on your device** appears after certificate creation, with a separately displayed password, one-use download and installation steps.
-- **Connect Pangolin and install the CA** lists public resources and uploads the local CA public certificate on explicit selection. The key stays in the open page only.
 
 Configuration labels describe the action or decision. Existing option keys/defaults remain compatible; **Recovery administrator IDs (optional)** is an escape hatch rather than an ordinary setup prerequisite. The UI retains relevant limits (for example, replacement does not revoke an old identity) beside the affected workflow.

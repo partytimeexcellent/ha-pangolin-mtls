@@ -4,10 +4,10 @@ Dev.10 implements the intended no-ID-copying setup. It manages who may administe
 
 ## First setup
 
-1. In app Configuration, enable **Set up with your Home Assistant account** (`enable_administrator_setup`), leaving `admin_user_ids` empty. This option defaults off to preserve existing empty-allowlist denial and upgrade behavior.
+1. Leave **Recovery administrator IDs** empty in app Configuration. First-time setup is available to a Core-verified Home Assistant administrator only when no configured IDs or saved administrator selection exist.
 2. Open ingress while signed in to HA as an active administrator. HTTPS is required. The backend reads the trusted Supervisor ingress identity and matches it to an active, non-system owner or `system-admin` member returned by Core. Neither `panel_admin`, an app token nor browser input proves the human's privileges.
-3. In **Set up app access**, select **Check my access**, then **Choose administrators**. Your current account is preselected automatically. Choose any additional administrators and **Save administrators**. Your own account must remain selected.
-4. Select **Finish setup**. A fresh protected request and administrator check confirm access before completion is saved. The combined card collapses and stays collapsed after reopening; certificate management becomes the main content. Expand **App access · Set up** whenever access settings need attention.
+3. In **Home Assistant setup**, review the URL, select **Choose administrators**, keep your own account selected, choose any additional administrators and select **Save administrators**.
+4. Select **Check access**. The app verifies authorization, finishes setup and collapses the Home Assistant section. Expand it later to change administrators.
 
 No selection is created by viewing the page, listing accounts or checking access. Before explicit save, verified setup visitors can access only setup routes/assets, never issuance, exports or Pangolin checks. Setup permission stops after any selection file has been saved, even if it contains an empty list. Other HA administrators do not automatically gain access after setup. First-run concurrent saves use revision checks; only one selection wins.
 

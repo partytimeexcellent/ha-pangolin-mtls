@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.0-dev.13
+
+- Put Home Assistant URL, administrator selection and access check in one setup section; put API-key instructions, Pangolin API URL, Organization ID, resource discovery and CA installation in a second section. Completed setup sections collapse.
+- Remove the administrator setup and certificate creation switches from the app configuration. Both services are available after verified setup and HTTPS configuration; CA creation remains an explicit action.
+- Accept the Pangolin API URL from the protected setup form. Preserve the former Supervisor URL option as an upgrade fallback; save only the URL in this browser after successful discovery, never the API key.
+- Update the installation and troubleshooting instructions for the simplified setup flow.
+
 ## 0.1.0-dev.12
 
 - List Pangolin public resources in Set up app access and upload the local CA public certificate to an explicitly selected HTTPS resource. Verify trust by reading back the CA fingerprint.

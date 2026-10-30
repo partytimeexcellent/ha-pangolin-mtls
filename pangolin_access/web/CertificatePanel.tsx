@@ -52,7 +52,7 @@ export function CertificatePanel() {
         const data = z.object({ signingEnabled: z.boolean() }).parse(await status.json());
         setEnabled(data.signingEnabled);
         if (data.signingEnabled) { await refresh(); setMessage(''); }
-        else setMessage('Certificate creation is off. Turn on Enable certificate creation in Configuration, save and restart the app.');
+        else setMessage('Certificate service is unavailable. Check the Home Assistant HTTPS URL and restart the app.');
       } catch { setMessage('Could not load certificate status. Reopen the Web UI or check your access.'); }
     })();
   }, []);
@@ -106,7 +106,7 @@ export function CertificatePanel() {
     });
   }
   return <section aria-labelledby="certificate-title">
-    <div className="section-heading"><div><p className="eyebrow">YOUR DEVICES</p><h2 id="certificate-title">Device certificates</h2></div><span className="badge">{enabled ? 'Certificate creation on' : 'Certificate creation off'}</span></div>
+    <h2 id="certificate-title">Device certificates</h2>
     <p>Create a certificate for each device, download it and install it in the app you use.</p>
     {message && <p className="status-message" role="status" aria-live="polite">{message}</p>}
     {enabled && inventory && <>

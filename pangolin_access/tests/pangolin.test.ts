@@ -74,6 +74,29 @@ test('check requires ingress, CSRF and strict input before contacting configured
   assert.ok(!checked.body.includes('never-return'));
 });
 
+test('Pangolin setup accepts its API URL in the protected form and rejects invalid URLs', async t => {
+  const user = 'a'.repeat(32);
+  const origin = 'https://ha.example.test';
+  const headers = { 'x-remote-user-id': user, 'x-ingress-path': '/api/hassio_ingress/disposable_fixture_for_tests/' };
+  const remoteAddress = '172.30.32.2';
+  let baseSeen = '';
+  const app = await createApp({ admin_user_ids: [user], home_assistant_origin: origin }, {
+    webRoot: fileURLToPath(new URL('../dist/web', import.meta.url)),
+    pangolinReader: async (base) => { baseSeen = base; return fixture([]); },
+  });
+  t.after(() => app.close());
+  const session = (await app.inject({ url: '/api/session', remoteAddress, headers })).json();
+  const protectedHeaders = { ...headers, origin, 'x-access-session': session.sessionId, 'x-csrf-token': session.csrfToken };
+  const body = { orgId: 'fixture', apiKey: 'fixture-key', apiUrl: 'https://api.example.test/v1/' };
+  const valid = await app.inject({ method: 'POST', url: '/api/pangolin/check', remoteAddress, headers: protectedHeaders, payload: body });
+  assert.equal(valid.statusCode, 200);
+  assert.equal(baseSeen, 'https://api.example.test/v1');
+  baseSeen = '';
+  const invalid = await app.inject({ method: 'POST', url: '/api/pangolin/check', remoteAddress, headers: protectedHeaders, payload: { ...body, apiUrl: 'http://localhost/v1' } });
+  assert.equal(invalid.statusCode, 400);
+  assert.equal(baseSeen, '');
+});
+
 test('pinned HTTPS reader sends only GET, keeps TLS verification and refuses redirects, excess data and raw errors', async () => {
   const { readPinnedJson } = await import('../server/pangolin.js');
   const { EventEmitter } = await import('node:events');

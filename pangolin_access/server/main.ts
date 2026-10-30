@@ -9,7 +9,9 @@ import { PkiService } from './pki.js';
 process.umask(0o077);
 // Read Supervisor options before dropping privileges. No environment overrides or auth bypass.
 async function main() {
-  const input = startupOptionsSchema.parse(JSON.parse(await readFile('/data/options.json', 'utf8')));
+  const stored = startupOptionsSchema.parse(JSON.parse(await readFile('/data/options.json', 'utf8')));
+  // These are part of the app's normal setup, including upgrades with old disabled values.
+  const input = { ...stored, enable_administrator_setup: true, enable_certificate_management: true };
   const supervisorToken = process.env.SUPERVISOR_TOKEN;
   delete process.env.SUPERVISOR_TOKEN;
   await mkdir('/data/state', { recursive: true, mode: 0o700 });

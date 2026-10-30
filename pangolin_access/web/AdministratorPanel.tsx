@@ -11,7 +11,7 @@ export function AdministratorPanel({ onSaved }: { onSaved?: () => void }) {
     setBusy(true);
     try {
       const next = schema.parse(await (await protectedPost('./api/administrators/list', {})).json());
-      setData(next); setIds(next.ids.length || next.configuredIds.length ? next.ids.filter(id => next.users.some(u => u.id === id)) : [next.currentUserId]); setMessage('Keep your account selected and choose anyone else who should manage certificates.');
+      setData(next); setIds(next.ids.length || next.configuredIds.length ? next.ids.filter(id => next.users.some(u => u.id === id)) : [next.currentUserId]); setMessage('Keep your account selected, then save.');
     } catch (error) { setMessage(error instanceof Error && /\([A-Z_]+, HTTP \d+\)$/.test(error.message) ? error.message : 'Could not load administrator names. Check your access and try again.'); }
     finally { setBusy(false); }
   }
@@ -24,9 +24,9 @@ export function AdministratorPanel({ onSaved }: { onSaved?: () => void }) {
     } catch (error) { setMessage(error instanceof Error && /\([A-Z_]+, HTTP \d+\)$/.test(error.message) ? error.message : 'Could not save administrator selection. Reload names before retrying.'); }
     finally { setBusy(false); }
   }
-  return <div aria-labelledby="administrators-title">
-    <p className="step-label">2 · Choose administrators</p><h3 id="administrators-title">App administrators</h3>
-    <p>Selected administrators can create and download device certificates. This list controls app access; it does not assign certificates to people.</p>
+  return <div>
+    <p className="step-label">Administrator</p>
+    <p>Choose who can create and download device certificates. Sign in as a Home Assistant administrator to make this selection.</p>
     <button disabled={busy} onClick={load}>Choose administrators</button>
     {data && <fieldset disabled={busy}><legend>App administrators</legend>
       {data.users.map(user => <label className="check" key={user.id}>

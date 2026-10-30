@@ -1,27 +1,15 @@
 configuration:
-  enable_administrator_setup:
-    name: Set up with your Home Assistant account
-    description: >-
-      Turn on for first setup, then open the Web UI while signed in as a Home Assistant
-      administrator. Your account is found automatically; no user ID copying is needed.
-      Leave recovery IDs empty for this path. This setting has no effect after access is saved.
   admin_user_ids:
     name: Recovery administrator IDs (optional)
     description: >-
       Usually leave empty and set up access in the Web UI. For manual setup or recovery,
       add a trusted user's 32-character Home Assistant user ID here. These accounts retain
       access independently of the Web UI selection. Remove IDs you no longer trust.
-  enable_certificate_management:
-    name: Enable certificate creation
-    description: >-
-      Allow authorized administrators to create the certificate authority and device
-      certificates. Requires an HTTPS Home Assistant address. Nothing is created until
-      you confirm an action in the Web UI. Pangolin settings are managed separately.
   enable_home_assistant_notifications:
     name: Certificate expiry reminders
     description: >-
-      Show reminders in Home Assistant before certificates expire. Certificate creation
-      must be enabled and this app must be running. Reminders appear in the notification
+      Show reminders in Home Assistant before certificates expire. This app must be running.
+      Reminders appear in the notification
       panel; phone push notifications are not included.
   home_assistant_origin:
     name: Home Assistant URL override (optional)
@@ -29,9 +17,3 @@ configuration:
       Leave blank to use Home Assistant's external URL. If you open this app at another
       address, enter that HTTPS address here, for example https://ha.example.net.
       Include a port if needed, but no path. Save and restart to apply changes.
-  pangolin_api_url:
-    name: Pangolin API URL (optional)
-    description: >-
-      Only needed for connection checks in the Web UI. Enter the public HTTPS integration
-      API URL ending in /v1, then save and restart. Creating certificates and using your
-      devices do not require a Pangolin API key. The app does not change Pangolin settings.

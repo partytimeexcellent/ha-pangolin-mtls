@@ -44,18 +44,17 @@ https://github.com/partytimeexcellent/ha-pangolin-mtls
 
 Refresh the store, install **HA Pangolin Access**, and leave protection mode enabled. Source builds can take time. Local-folder installation is an alternative for development, described in [development.md](development.md).
 
-In the app's **Configuration**, enable **Set up with your Home Assistant account** and leave **Recovery administrator IDs (optional)** empty. Sign in to HA as an active administrator. The app retrieves your account ID automatically; you do not need to copy it. Manual IDs remain an optional recovery alternative. Leave **Home Assistant URL override (optional)** blank to use HA's configured external URL, or enter the address you use to open this app as an override. For the optional manual recovery path, find the ID in HA user details; Advanced Mode may be needed. The example below illustrates that manual alternative.
+In the app's **Configuration**, leave **Recovery administrator IDs (optional)** empty. Sign in to HA as an active administrator. The app retrieves your account ID automatically; you do not need to copy it. Manual IDs remain an optional recovery alternative. Leave **Home Assistant URL override (optional)** blank to use HA's configured external URL, or enter the address you use to open this app as an override. For the optional manual recovery path, find the ID in HA user details; Advanced Mode may be needed. The example below illustrates that manual alternative.
 
 ```yaml
 admin_user_ids:
   - "REPLACE_WITH_YOUR_32_CHARACTER_HA_USER_ID"
 home_assistant_origin: ""
-enable_certificate_management: false
 ```
 
 The placeholder user ID must be replaced before saving. `home_assistant_origin` is the retained YAML key for **Home Assistant URL override (optional)**. A blank/missing value reads HA’s `external_url` at startup through the internal Core API; an entered value overrides it and bypasses discovery. The effective address and its source appear in the Web UI. Use only scheme, hostname and any nonstandard port, with no path, query or ingress token. Open this app using that same address. `https://ha.example.net` and `http://192.168.10.20:8123` are different origins.
 
-Start the app, select **Open Web UI**, and select **Check my access**. The expected result is an authorization pass with signing disabled. Once that works, change `enable_certificate_management` to `true`, save and restart the app. Certificate management requires an HTTPS HA origin.
+Start the app and select **Open Web UI**. In **Home Assistant setup**, review the URL, choose and save administrators, then select **Check access**. The section collapses after access is confirmed. Certificate creation requires an HTTPS HA origin and an explicit creation action.
 
 For an ordinary installation, you do not need to remove your user ID and lock yourself out as we did during prototype validation. Keep the allowlist narrow; an empty ID list needs verified first-time setup or an eligible saved administrator. The app also enforces ingress, session and request protections on its backend.
 
@@ -145,9 +144,9 @@ The value to enter in our app is exactly the HTTPS base ending in **`/v1`**, wit
 
 ## 4. Create one organization API key
 
-The Pangolin setup form is under **Set up app access**. The key is needed for discovery and CA upload; normal device access and local issuance do not need it.
+The Pangolin setup form is under **Pangolin setup**. The key is needed for discovery and CA upload; normal device access and local issuance do not need it.
 
-Create the key within the organization containing your new resource. Enable all seven permissions now to avoid adding them in separate troubleshooting rounds:
+Create the key within the organization containing your new resource. Enable all eight permissions now to avoid adding them in separate troubleshooting rounds:
 
 | Category | Exact permission label | Action |
 | --- | --- | --- |
@@ -164,13 +163,7 @@ Save the permissions. **Get Resource** and **Get Resource Policy** are separate.
 
 Find the organization ID in the organization's General settings or the first path component in its dashboard URL. For example, `https://pangolin.example.net/home-lab/settings/sites` means organization ID `home-lab`. Use the ID, not the display name. [Pangolin's organization-ID guide](https://docs.pangolin.net/manage/organizations/org-id)
 
-Add the API URL to this app's HA Configuration, save and restart:
-
-```yaml
-pangolin_api_url: "https://api.pangolin.example.net/v1"
-```
-
-Open **Set up app access → Connect Pangolin and install the CA**. Enter the organization ID and full API key, then select **Find public resources**. Do not add `Bearer`. The key remains in this page’s memory for setup actions and is not saved; close the page when finished.
+Open **Pangolin setup**. Enter the public HTTPS API URL ending in `/v1` (for example `https://api.pangolin.example.net/v1`), the Pangolin Organization ID and full API key, then select **Find public resources**. Do not add `Bearer`. The API URL is saved in this browser after a successful search. The key remains in page memory for setup actions and is not saved; close the page when finished.
 
 A pass confirms the scoped reads and expected response shapes. It does not prove target reachability or mTLS enforcement.
 
@@ -184,7 +177,7 @@ The app uploads only the CA public certificate. **Download public CA certificate
 
 In Pangolin, create a **separate HTTPS public resource** for `ha-mtls.example.net`, then disable it before attaching the real HA backend. Keep its target absent or disabled during preparation. Do not assign a shared resource policy. Choose the connected site and backend destination that can reach HA; if the UI creates a target, explicitly disable that target too. A disabled resource and a disabled target are two separate controls.
 
-The resource list appears under **Set up app access**. Choose the intended Home Assistant hostname. Only HTTPS public resources with a hostname show **Install CA cert**. The app then checks the exact resource, organization, inline policy, hostname conflicts and existing trust. A shared-policy resource is refused because uploading there could affect other resources. If the CA is already present, the app reports that without uploading again. Pangolin's limit is 20 trusted CA entries per resource.
+The resource list appears under **Pangolin setup**. Choose the intended Home Assistant hostname. Only HTTPS public resources with a hostname show **Install CA cert**. The app then checks the exact resource, organization, inline policy, hostname conflicts and existing trust. A shared-policy resource is refused because uploading there could affect other resources. If the CA is already present, the app reports that without uploading again. Pangolin's limit is 20 trusted CA entries per resource.
 
 ## 6. Install CA trust and enable mTLS
 
@@ -258,4 +251,4 @@ For updates, read the changelog, take a protected backup, update in place and co
 
 With dev.6, turn on **Certificate expiry reminders** (`enable_home_assistant_notifications` in YAML) in app Configuration and restart if you want expiry reminders in the HA notification panel. Enable **Start on boot** to keep checks running after host restarts. Phone push delivery is not included. Existing certificates are tracked without recreating them. For the replacement workflow, notification behavior and pre-update backup instructions, see [certificate management](certificate-management.md#expiry-reminders).
 
-The app can now download the encrypted enrollment package as **iOS mTLS installer.zip**, avoiding the manual Finder compression step. For iOS/iPadOS, use the single installer ZIP download and keep the password separate. Pangolin resource creation, mTLS enablement and initial test-resource activation remain manual; CA upload can use the app. Verified administrator setup can retrieve the current ID automatically. Complete **Check my access → Choose administrators → Save administrators → Finish setup**. The administration card stays open for Pangolin setup. Actual Core permission acceptance needs validation.
+The app can now download the encrypted enrollment package as **iOS mTLS installer.zip**, avoiding the manual Finder compression step. For iOS/iPadOS, use the single installer ZIP download and keep the password separate. Pangolin resource creation, mTLS enablement and initial test-resource activation remain manual; CA upload can use the app. Verified administrator setup can retrieve the current ID automatically. Complete **Home Assistant setup: URL → Administrator → Check access**. The Home Assistant setup card then collapses, while Pangolin setup remains available. Actual Core permission acceptance needs validation.

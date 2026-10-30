@@ -1,11 +1,12 @@
 import { X509Certificate } from 'node:crypto';
 import { z } from 'zod';
-import { PangolinError, type ReadJson, type WriteJson } from './pangolin.js';
+import { apiUrlSchema, PangolinError, type ReadJson, type WriteJson } from './pangolin.js';
 import { inspectResource, resourceSelectionSchema } from './resource-inspection.js';
 
 export const caInstallSchema = z.strictObject({
   orgId: z.string().min(1).max(100).regex(/^[A-Za-z0-9_-]+$/),
   apiKey: z.string().min(1).max(1024).regex(/^[\x21-\x7e]+$/),
+  apiUrl: apiUrlSchema.optional(),
   ...resourceSelectionSchema.shape,
   confirm: z.literal(true),
 });

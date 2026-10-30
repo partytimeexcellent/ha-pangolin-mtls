@@ -37,7 +37,7 @@ Apply request size limits, bounded names and lifetime values, serialized sensiti
 
 ## At-rest encryption and startup
 
-Implemented POC (`0.1.0-dev.3`): the CA key uses standard encrypted PKCS#8, and a random 0600 local unlock secret enables automatic startup. SQLite metadata remains unencrypted. The paired files are protected by a 0700 directory, but a full backup/host compromise yields both. There is no manual-unlock or separate recovery-archive feature yet. The POC's default-off certificate option additionally requires HTTPS and explicit authenticated creation/download actions. These are implementation facts, not a completed independent review.
+Implemented POC (`0.1.0-dev.3`): the CA key uses standard encrypted PKCS#8, and a random 0600 local unlock secret enables automatic startup. SQLite metadata remains unencrypted. The paired files are protected by a 0700 directory, but a full backup/host compromise yields both. There is no manual-unlock or separate recovery-archive feature yet. The current app enables certificate service at startup and requires HTTPS, verified administrator setup and explicit authenticated creation/download actions. Earlier POC builds used a default-off option. These are implementation facts, not a completed independent review.
 
 Three different protections must be explained accurately:
 
@@ -93,4 +93,4 @@ The administrator picker is included in dev.9. Configured IDs retain their exist
 
 ## Verified administrator setup (dev.10)
 
-The owner authorized setup without manual ID copying. An explicit default-off `enable_administrator_setup` option permits only setup routes on an empty installation with no configured IDs and no saved selection. The backend matches the trusted ingress actor to a current active, non-system Core administrator and requires HTTPS, session/CSRF/origin protections and explicit save retaining that actor. Viewing the page never claims access. Existing installations do not broaden, and a saved empty selection cannot reopen bootstrap. The setup-completion flag only controls presentation. See [setup and recovery](docs/administrator-picker.md).
+The owner authorized setup without manual ID copying. The app permits only setup routes on an empty installation with no configured IDs and no saved selection. The backend matches the trusted ingress actor to a current active, non-system Core administrator and requires HTTPS, session/CSRF/origin protections and explicit save retaining that actor. Viewing the page never claims access. Existing installations do not broaden, and a saved empty selection cannot reopen bootstrap. The setup-completion flag controls presentation after explicit administrator selection. See [setup and recovery](docs/administrator-picker.md).

@@ -6,11 +6,11 @@ Pangolin Access creates device certificates and can install its public CA certif
 
 ## First installation: short path
 
-1. Install **HA Pangolin Access** from this repository. In Configuration, enable verified administrator setup, then complete **Check my access → Choose administrators → Save administrators → Finish setup**. Enable certificate management and restart.
+1. Install **HA Pangolin Access** from this repository. In **Home Assistant setup**, review the URL, choose and save administrators, then select **Check access**.
 2. Create the certificate authority once in **Device certificates** and take a protected backup of app data.
-3. Enable Pangolin's integration API, expose its HTTPS `/v1` URL, and set that URL in this app's Configuration. Create an organization API key with the permissions below.
+3. Enable Pangolin's integration API, expose its HTTPS `/v1` URL, and enter that URL in **Pangolin setup**. Create an organization API key with the permissions below.
 4. In Pangolin, prepare a dedicated HTTPS public resource for Home Assistant, preferably disabled during setup, without a shared policy.
-5. Open **Set up app access → Connect Pangolin and install the CA**. Enter the organization ID and API key, select **Find public resources**, then **Install CA cert** on the intended hostname. The app checks the resource before upload and verifies its CA fingerprint afterward.
+5. Open **Pangolin setup**. Enter the Pangolin API URL, Organization ID and API key, select **Find public resources**, then **Install CA cert** on the intended hostname. The app checks the resource before upload and verifies its CA fingerprint afterward.
 6. In Pangolin, enable **Client Certificate (mTLS)** on that resource. Create and import a device certificate in Companion. Enable the target/resource, then verify rejection without a certificate and access with the enrolled device.
 
 See the [complete installation tutorial](https://github.com/partytimeexcellent/ha-pangolin-mtls/blob/main/docs/installation.md) for API routing, setup order and device import details.
@@ -27,15 +27,13 @@ For Safari only, install **Install for Safari.mobileconfig** from the ZIP; Compa
 admin_user_ids:
   - "REPLACE_WITH_YOUR_32_CHARACTER_HA_USER_ID"
 home_assistant_origin: ""
-enable_certificate_management: false
-pangolin_api_url: "https://api.pangolin.example.net/v1"
 ```
 
-Replace every placeholder. **Home Assistant URL override (optional)** uses HA’s configured `external_url` at startup when blank. An entered `home_assistant_origin` value overrides it; use the exact HA scheme/hostname/port with no path or ingress token. The Web UI shows the effective address and source. Existing explicit values are preserved; clear the field and restart to use automatic mode. If HA has no external URL or Core is unavailable, set a manual override or configure HA first, then restart. Open this app using the selected address. Initially leave certificate management off, verify access, then enable it explicitly. An empty ID list denies access unless verified first-time setup is enabled or an eligible saved administrator is selected. The API URL is needed for automatic CA installation and must resolve to public addresses with valid HTTPS.
+Replace every placeholder. **Home Assistant URL override (optional)** uses HA’s configured `external_url` at startup when blank. An entered `home_assistant_origin` value overrides it; use the exact HA scheme/hostname/port with no path or ingress token. The Web UI shows the effective address and source. Existing explicit values are preserved; clear the field and restart to use automatic mode. If HA has no external URL or Core is unavailable, set a manual override or configure HA first, then restart. Open this app using the selected address. Certificate creation requires an HTTPS Home Assistant URL and verified administrator setup. An empty ID list denies access unless a Core-verified administrator completes first-time setup or an eligible saved administrator is selected. Enter the API URL in Pangolin setup for automatic CA installation. It must resolve to public addresses with valid HTTPS. The URL is saved in this browser after a successful resource search; the API key stays only in page memory.
 
 ## API key permissions
 
-Pangolin setup appears under **Set up app access**. Discovery and installation need the permissions below. Daily device access needs none. Follow the [short Pangolin connection-check routine](https://github.com/partytimeexcellent/ha-pangolin-mtls/blob/main/docs/pangolin-connection-check.md).
+Pangolin setup has its own section above Device certificates. Discovery and installation need the permissions below. Daily device access needs none. Follow the [short Pangolin connection-check routine](https://github.com/partytimeexcellent/ha-pangolin-mtls/blob/main/docs/pangolin-connection-check.md).
 
 | Category | Enable |
 | --- | --- |
@@ -76,7 +74,7 @@ Use **Replace certificate** to issue a fresh identity, import it inside Companio
 
 ## User-name picker
 
-Initial setup can retrieve the signed-in administrator ID automatically when **Set up with your Home Assistant account** is enabled and no IDs or saved selection exist. The combined administration card verifies access, selects names and remains available for Pangolin setup after **Finish setup**. Existing configured IDs remain an optional recovery path. The [administrator picker guide](https://github.com/partytimeexcellent/ha-pangolin-mtls/blob/main/docs/administrator-picker.md) explains eligibility checks, saved selections, recovery and the verified setup boundary. Actual Core/Supervisor permission acceptance still needs validation. The separate Pangolin CA upload uses the permissions listed above.
+Initial setup retrieves the signed-in administrator ID automatically when no IDs or saved selection exist. Home Assistant setup shows the URL, administrator selection and access check, then collapses after confirmation. Pangolin setup is a separate section. Existing configured IDs remain an optional recovery path. The [administrator picker guide](https://github.com/partytimeexcellent/ha-pangolin-mtls/blob/main/docs/administrator-picker.md) explains eligibility checks, saved selections, recovery and the verified setup boundary. Actual Core/Supervisor permission acceptance still needs validation. The separate Pangolin CA upload uses the permissions listed above.
 
 ## API automation and the external URL
 

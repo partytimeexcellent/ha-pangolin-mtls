@@ -8,58 +8,69 @@ import { CertificatePanel } from './CertificatePanel';
 import { PangolinPanel } from './PangolinPanel';
 import './style.css';
 
+const pangolinSetupKey = 'ha-pangolin-ca-installed';
+function savedPangolinSetup() {
+  try { return localStorage.getItem(pangolinSetupKey) === 'true'; }
+  catch { return false; }
+}
+
 function App() {
-  const [setupComplete, setSetupComplete] = useState(false);
   const [ready, setReady] = useState(false);
-  const [setupOpen, setSetupOpen] = useState(true);
-  const [verified, setVerified] = useState(false);
+  const [homeOpen, setHomeOpen] = useState(true);
+  const [pangolinOpen, setPangolinOpen] = useState(false);
+  const [pangolinComplete, setPangolinComplete] = useState(savedPangolinSetup);
+  const [adminSaved, setAdminSaved] = useState(false);
   const [externalUrl, setExternalUrl] = useState<{ homeAssistantUrl: string; homeAssistantUrlSource: string } | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [result, setResult] = useState('');
   useEffect(() => {
     void (async () => {
       try {
         const response = await checked(await fetch('./api/status', { cache: 'no-store', credentials: 'same-origin', redirect: 'error', signal: AbortSignal.timeout(10_000) }));
         const administration = z.object({ setupComplete: z.boolean() }).parse(await (await checked(await fetch('./api/administration-status', { cache: 'no-store', credentials: 'same-origin', redirect: 'error', signal: AbortSignal.timeout(10_000) }))).json());
-        setReady(administration.setupComplete); setSetupComplete(administration.setupComplete); setSetupOpen(true);
+        setReady(administration.setupComplete);
+        setHomeOpen(!administration.setupComplete);
+        setPangolinOpen(administration.setupComplete && !savedPangolinSetup());
         setExternalUrl(z.object({ homeAssistantUrl: z.string().url(), homeAssistantUrlSource: z.enum(['configuration', 'home-assistant']) }).parse(await response.json()));
-      } catch { /* Existing access-check flow reports authorization failures safely. */ }
+      } catch { /* Access failures are reported by the access check. */ }
     })();
   }, []);
-  const [busy, setBusy] = useState(false);
-  const [result, setResult] = useState('Confirm your account to continue.');
   async function check() {
-    setBusy(true);
-    setResult('Checking…');
+    setBusy(true); setResult('Checking access…');
     try {
       const message = await checkAccess();
-      setResult(message.startsWith('Authorization check passed.') ? 'Your account has access. Choose who can manage this app below.' : message); setVerified(message.startsWith('Authorization check passed.'));
-    } finally { setBusy(false); }
-  }
-  async function finish() {
-    setBusy(true);
-    try {
-      await protectedPost('./api/authorization-check', {});
-      await protectedPost('./api/administrators/finish', {});
-      setReady(true); setSetupComplete(true); setSetupOpen(true); setResult('Administration setup complete. Continue with Pangolin setup below.');
+      if (!message.startsWith('Authorization check passed.')) { setResult(message); return; }
+      if (!ready) {
+        await protectedPost('./api/administrators/finish', {});
+        setReady(true); setHomeOpen(false); setPangolinOpen(true);
+        setResult('Home Assistant setup complete. Continue with Pangolin setup.');
+      } else setResult('Access confirmed.');
     } catch { setResult('Could not finish setup. Save your administrator selection and check access again.'); }
     finally { setBusy(false); }
   }
+  function pangolinInstalled() {
+    try { localStorage.setItem(pangolinSetupKey, 'true'); } catch { /* Collapse for this page even if storage is unavailable. */ }
+    setPangolinComplete(true); setPangolinOpen(false);
+  }
   return <main>
-    <header className="page-header"><p className="eyebrow">HOME ASSISTANT</p>
-    <h1>Pangolin Access</h1>
-    <p className="intro">Create and manage certificates for your devices.</p></header>
-    <details className="administration" open={setupOpen} onToggle={event => setSetupOpen(event.currentTarget.open)}>
-      <summary>Set up app access</summary>
-      <h2>Who can manage this app?</h2>
-      <p>You must be signed in as an active Home Assistant administrator to set up this app. We’ll find your account automatically. No user ID copying is needed.</p>
-      {externalUrl && <details className="subdetails"><summary>Home Assistant address</summary><p>External URL: <span className="fingerprint">{externalUrl.homeAssistantUrl}</span> ({externalUrl.homeAssistantUrlSource === 'home-assistant' ? 'from Home Assistant settings' : 'app configuration override'}). Change Home Assistant URL override in Configuration if you use a different address.</p></details>}
-      <p className="step-label">1 · Confirm your access</p>
-      <button onClick={check} disabled={busy}>{busy ? 'Checking…' : 'Check my access'}</button>
+    <header className="page-header"><h1>Pangolin Access</h1></header>
+    <details className="administration" open={homeOpen} onToggle={event => setHomeOpen(event.currentTarget.open)}>
+      <summary>Home Assistant setup{ready ? ' · Complete' : ''}</summary>
+      <p className="step-label">URL</p>
+      {externalUrl ? <p><strong>{externalUrl.homeAssistantUrl}</strong> · {externalUrl.homeAssistantUrlSource === 'home-assistant' ? 'Home Assistant external URL' : 'App configuration override'}. Change the Home Assistant URL override in Configuration if this is not the address you use to open the app.</p>
+        : <p>Set an HTTPS external URL in Home Assistant, or enter the Home Assistant URL override in this app’s Configuration.</p>}
+      <AdministratorPanel onSaved={() => { setAdminSaved(true); setResult('Administrator selection saved. Check access to finish.'); }} />
+      <p className="step-label">Check access</p>
+      <button onClick={check} disabled={busy || (!ready && !adminSaved)}>{busy ? 'Checking…' : 'Check access'}</button>
+      {!ready && !adminSaved && <p>Save your administrator selection first.</p>}
       <p role="status" aria-live="polite">{result}</p>
-      {verified && <AdministratorPanel onSaved={() => { setSetupComplete(false); setResult('Selection saved. Select Finish setup to confirm access and continue.'); }} />}
-      {verified && <button onClick={finish} disabled={busy}>Finish setup</button>}
-      <PangolinPanel ready={ready} />
     </details>
-    {ready ? <CertificatePanel /> : <div className="empty-state"><h2>Your devices will appear here</h2><p>Finish setting up app access to start creating device certificates.</p></div>}
+    <details className="administration" open={pangolinOpen} onToggle={event => setPangolinOpen(event.currentTarget.open)}>
+      <summary>Pangolin setup{pangolinComplete ? ' · Completed in this browser' : ''}</summary>
+      <PangolinPanel ready={ready} onInstalled={pangolinInstalled} />
+    </details>
+    {pangolinComplete && <p className="status-message" role="status">This browser recorded a successful CA installation. Verify the resource’s current trust in Pangolin, enable client certificate (mTLS), then test access with and without a device certificate.</p>}
+    {ready ? <CertificatePanel /> : <div className="empty-state"><h2>Device certificates</h2><p>Finish Home Assistant setup to create certificates.</p></div>}
     <footer className="page-footer"><p>Home Assistant sign-in is always required.</p><p>Version {import.meta.env.VITE_APP_VERSION} · Early access</p></footer>
   </main>;
 }

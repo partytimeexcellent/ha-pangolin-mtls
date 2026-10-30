@@ -1,6 +1,6 @@
 # Troubleshooting HA Pangolin Access
 
-Applies to the dev.5 certificate manager and read-only Pangolin inspector. Start with the [installation tutorial](installation.md); use [advanced checks](manual-checks.md) for terminal diagnosis and maintainer tests.
+Applies to the certificate manager and Pangolin CA setup. Start with the [installation tutorial](installation.md); use [advanced checks](manual-checks.md) for terminal diagnosis and maintainer tests.
 
 ## Home Assistant app access
 
@@ -10,7 +10,7 @@ Applies to the dev.5 certificate manager and read-only Pangolin inspector. Start
 | `ORIGIN_MISMATCH` | Set `home_assistant_origin` to the exact scheme, hostname and port currently used to open HA. Include no path or ingress token. Save/restart, then use that origin. |
 | `ORIGIN_MISSING` / `ORIGIN_NULL` | The expected origin did not arrive; inspect the legitimate HA/proxy path. Do not accept absent/opaque origins as a fallback. |
 | Session/CSRF failure | Reopen the app through HA ingress and retry. App sessions expire; do not expose the app's port to bypass ingress. |
-| Certificate section is off | After the authorized check succeeds, enable `enable_certificate_management`, use an HTTPS HA origin, save and restart. |
+| Certificate section unavailable | Use an HTTPS Home Assistant URL and finish administrator setup; restart the app after changing its URL. |
 | Old UI after updating | Refresh/check the app store for updates, update in place and reopen the Web UI. Confirm the build footer. Keep existing app data and CA. |
 
 ## Pangolin integration API
