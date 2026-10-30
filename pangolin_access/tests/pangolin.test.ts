@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { apiUrlSchema, inspectPangolin, publicAddress, PangolinError, type ReadJson } from '../server/pangolin.js';
+import { integrationApiUrl } from '../web/PangolinPanel.js';
 import { createApp } from '../server/app.js';
 
 const paths = ['/org/{orgId}', '/org/{orgId}/sites', '/org/{orgId}/domains', '/org/{orgId}/public-resources'];
@@ -25,6 +26,14 @@ test('API URL and destination restrictions reject local, reserved and ambiguous 
   for (const value of ['127.0.0.1', '10.1.2.3', '172.30.32.2', '192.168.1.1', '169.254.169.254', '100.100.100.200', '0.0.0.0', '224.0.0.1', '240.0.0.1', '192.0.2.1', '::1', '::ffff:8.8.8.8', 'fc00::1', 'fe80::1', '2001:db8::1', '2002:0808:0808::1', '2001::1', '3fff::1', 'invalid']) assert.equal(publicAddress(value), false, value);
   assert.equal(publicAddress('8.8.8.8'), true);
   assert.equal(publicAddress('2606:4700:4700::1111'), true);
+});
+
+test('setup accepts the configured API address and adds /v1 once', () => {
+  assert.equal(integrationApiUrl('https://api.example.test'), 'https://api.example.test/v1');
+  assert.equal(integrationApiUrl('https://api.example.test/v1'), 'https://api.example.test/v1');
+  assert.equal(integrationApiUrl('https://api.example.test/v1/'), 'https://api.example.test/v1');
+  assert.equal(integrationApiUrl('https://api.example.test/org/settings'), null);
+  assert.equal(integrationApiUrl('https://user:secret@api.example.test'), null);
 });
 
 test('inventory checks deployed spec, bounds pagination and strips unrelated fields', async () => {

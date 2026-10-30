@@ -14,6 +14,7 @@ import { PkiError } from './openssl.js';
 import { apiUrlSchema, inspectPangolin, publicReader, publicWriter, PangolinError, type ReadJson, type WriteJson } from './pangolin.js';
 import { inspectResource, resourceSelectionSchema } from './resource-inspection.js';
 import { caInstallSchema, installCa } from './ca-install.js';
+import { enableMtls } from './mtls-enable.js';
 
 const peer = '172.30.32.2';
 const sessionLifetime = 5 * 60_000;
@@ -238,6 +239,25 @@ export async function createApp(options: Options, settings: {
       const read = await (settings.pangolinReader ?? publicReader)(apiUrl, input.data.apiKey, controller.signal);
       const write = await (settings.pangolinWriter ?? publicWriter)(apiUrl, input.data.apiKey, controller.signal);
       return await installCa(read, write, input.data.orgId, resourceSelectionSchema.parse(input.data), service.publicCertificate());
+    } finally { clearTimeout(timer); controller.abort(); input.data.apiKey = ''; pangolinBusy = false; }
+  });
+
+  app.post('/api/pangolin/enable-mtls', { config: { rateLimit: { max: 2, timeWindow: 60_000 } } }, async (request) => {
+    const service = requirePki();
+    const input = caInstallSchema.safeParse(request.body);
+    request.body = undefined;
+    if (!input.success) throw new PangolinError('PANGOLIN_INPUT', 400);
+    const apiUrl = input.data.apiUrl ?? options.pangolin_api_url;
+    if (!apiUrl) throw new PangolinError('PANGOLIN_URL_REQUIRED', 400);
+    if (pangolinBusy) throw new PangolinError('PANGOLIN_BUSY', 409);
+    pangolinBusy = true;
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 60_000);
+    request.raw.socket.setTimeout?.(65_000);
+    try {
+      const read = await (settings.pangolinReader ?? publicReader)(apiUrl, input.data.apiKey, controller.signal);
+      const write = await (settings.pangolinWriter ?? publicWriter)(apiUrl, input.data.apiKey, controller.signal);
+      return await enableMtls(read, write, input.data.orgId, resourceSelectionSchema.parse(input.data), service.publicCertificate());
     } finally { clearTimeout(timer); controller.abort(); input.data.apiKey = ''; pangolinBusy = false; }
   });
 

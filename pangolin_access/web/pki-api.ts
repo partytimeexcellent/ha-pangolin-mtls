@@ -10,7 +10,7 @@ const errors: Record<string, string> = {
   PANGOLIN_SELECTION_NOT_FOUND: 'No unique exact resource identifier was found in this organization.',
   PANGOLIN_SELECTION_MISMATCH: 'The resource organization, identifier or hostname did not match your selection.',
   PANGOLIN_SNAPSHOT_CHANGED: 'The resource changed or inconsistent results were returned during inspection. Check Pangolin and try again.',
-  PANGOLIN_URL_REQUIRED: 'Enter Pangolin API URL in Pangolin setup. Use the public HTTPS integration API URL ending in /v1.',
+  PANGOLIN_URL_REQUIRED: 'Enter the public HTTPS Pangolin integration API address in Pangolin setup. The app adds /v1.',
   PANGOLIN_INPUT: 'Enter a valid Pangolin API URL, organization ID and API key.',
   PANGOLIN_BUSY: 'Another Pangolin check is running. Wait and try again.',
   PANGOLIN_ADDRESS_BLOCKED: 'The API hostname must resolve only to public addresses. Private and reserved destinations are blocked.',
@@ -24,6 +24,9 @@ const errors: Record<string, string> = {
   PANGOLIN_RESPONSE_LIMIT: 'The API response exceeded the check’s size limit.',
   PANGOLIN_NETWORK: 'The API could not be reached securely within the deadline. Check DNS, HTTPS certificate and network access.',
   PANGOLIN_RESOURCE_INELIGIBLE: 'This resource is not eligible for automatic CA installation. Use an HTTPS public resource with an inline policy and a unique hostname.',
+  PANGOLIN_CA_NOT_TRUSTED: 'Install this app’s CA on this resource before enabling mTLS.',
+  PANGOLIN_MTLS_ACTIVE_RESOURCE: 'Disable this resource in Pangolin before enabling mTLS through this app. This prevents an immediate lockout.',
+  PANGOLIN_MTLS_ENABLE_UNCERTAIN: 'The mTLS change could not be verified. Check the resource’s Client Certificate (mTLS) setting in Pangolin before trying again.',
   PANGOLIN_TRUST_FULL: 'This resource already has 20 trusted CAs. Review its trust in Pangolin.',
   PANGOLIN_WRITE_UNCERTAIN: 'The upload result is uncertain. Inspect this resource’s trusted CAs in Pangolin before trying again.',
   CA_INVALID: 'The local CA certificate is invalid or expired.',
@@ -33,7 +36,7 @@ const errors: Record<string, string> = {
   HTTPS_REQUIRED: 'Use an HTTPS Home Assistant origin for this operation.',
   REPLACEMENT_INVALID: 'Choose an existing certificate to replace, or download the replacement before confirming its device test.',
   CONFIRMATION_REQUIRED: 'Explicit confirmation is required.',
-  CA_REQUIRED: 'Create the certificate authority first.',
+  CA_REQUIRED: 'Create the certificate authority in Device certificates above before installing it on a resource.',
   CA_ALREADY_EXISTS: 'A certificate authority already exists. Refresh this page.',
   PKI_BUSY: 'Another certificate operation is running. Wait and try again.',
   EXPORT_CAPACITY: 'Five packages are already awaiting download. Download them or wait for expiry.',
@@ -52,7 +55,7 @@ const errors: Record<string, string> = {
 const pangolinStages: Record<string, string> = {
   specification: 'API specification', organization: 'Organization (Get Organization)', sites: 'Sites (List Sites)',
   domains: 'Domains (List Organization Domains)', resources: 'Resource search (List Resources)',
-  resource: 'Resource details (Get Resource)', policies: 'Policies (Get Resource Policy)', targets: 'Targets (List Targets)',
+  resource: 'Resource details (Get Resource)', policies: 'Policies (Get Resource Policy)', mtls: 'mTLS policy update (Update Resource Policy)', targets: 'Targets (List Targets)',
   trust: 'CA trust read or upload', hostname: 'Hostname search (List Resources)', recheck: 'Resource recheck (Get Resource)',
 };
 

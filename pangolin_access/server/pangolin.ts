@@ -7,7 +7,7 @@ export class PangolinError extends Error {
   constructor(public code: string, public statusCode = 502, public stage?: PangolinStage) { super(code); }
 }
 export type PangolinStage = 'specification' | 'organization' | 'sites' | 'domains' | 'resources' |
-  'resource' | 'policies' | 'targets' | 'trust' | 'hostname' | 'recheck';
+  'resource' | 'policies' | 'mtls' | 'targets' | 'trust' | 'hostname' | 'recheck';
 
 export const apiUrlSchema = z.string().max(300).transform((value, ctx) => {
   try {
@@ -40,7 +40,7 @@ export function publicAddress(address: string): boolean {
 }
 
 export type ReadJson = (path: string, authenticated: boolean) => Promise<unknown>;
-export type WriteJson = (path: string, body: unknown) => Promise<unknown>;
+export type WriteJson = (path: string, body: unknown, method?: 'PUT' | 'POST') => Promise<unknown>;
 
 // Resolve once, reject mixed/private answers, and pin the socket while retaining TLS hostname verification.
 export async function publicReader(base: string, key: string, signal: AbortSignal): Promise<ReadJson> {
@@ -61,7 +61,7 @@ async function publicEndpoint(base: string, signal: AbortSignal) {
 
 export async function publicWriter(base: string, key: string, signal: AbortSignal): Promise<WriteJson> {
   const pinned = await publicEndpoint(base, signal);
-  return (path, body) => requestPinnedJson(new URL(`/v1${path}`, pinned.url.origin), pinned.address, key, signal, 'PUT', body);
+  return (path, body, method = 'PUT') => requestPinnedJson(new URL(`/v1${path}`, pinned.url.origin), pinned.address, key, signal, method, body);
 }
 
 export function readPinnedJson(url: URL, pinned: { address: string; family: number }, key: string, authenticated: boolean, signal: AbortSignal, send: typeof request = request): Promise<unknown> {
@@ -69,7 +69,7 @@ export function readPinnedJson(url: URL, pinned: { address: string; family: numb
 }
 
 function requestPinnedJson(url: URL, pinned: { address: string; family: number }, key: string, signal: AbortSignal,
-  method: 'GET' | 'PUT', body?: unknown, send: typeof request = request): Promise<unknown> {
+  method: 'GET' | 'PUT' | 'POST', body?: unknown, send: typeof request = request): Promise<unknown> {
   return new Promise((resolve, reject) => {
     const fail = (code: string) => reject(new PangolinError(code));
     const payload = body === undefined ? undefined : JSON.stringify(body);

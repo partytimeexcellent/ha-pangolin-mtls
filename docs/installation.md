@@ -1,6 +1,6 @@
 # Install HA Pangolin Access and connect iOS Companion
 
-This tutorial covers creating a local CA, installing its public certificate on a selected Pangolin resource through the integration API, enabling mTLS, and importing a device identity into Companion. The API instructions were checked against Pangolin 1.25.2. Later versions may change screens or contracts.
+This tutorial covers creating a local CA, installing its public certificate on a selected Pangolin resource through the integration API, enabling mTLS, and importing a device identity into Companion. The integration and mTLS policy routes were checked against Pangolin 1.25.3 source. Later versions may change screens or contracts.
 
 This is an early-access version. See [release readiness](release-readiness.md) for the remaining checks before a production release. Initial client, cellular, restart and fresh TLS rejection checks have passed within the scope in [recorded results](phase-2-results.md). Backup restoration, rotation and broader compatibility remain separate release gates.
 
@@ -26,7 +26,7 @@ Use these example addresses as a worksheet. Replace them with your environment's
 | --- | --- | --- |
 | HA management origin | `https://ha.example.net` | Where you open HA and this app to manage certificates |
 | Pangolin dashboard | `https://pangolin.example.net` | Where you manage resources and API keys |
-| Pangolin integration API | `https://api.pangolin.example.net/v1` | Full self-hosted API URL used by this app; derive the hostname from the `int-api-router` rule |
+| Pangolin integration API | `https://api.pangolin.example.net` | Self-hosted API address entered in this app; it adds `/v1` |
 | New protected HA hostname | `ha-mtls.example.net` | Dedicated public hostname for the new mTLS resource |
 | Backend target | `192.168.10.20:8123` | HA address reachable **from the Pangolin site's connector** |
 
@@ -77,7 +77,7 @@ flags:
 
 Merge this into the existing `flags` section. The default integration port is `3003`; if you changed `server.integration_port`, use that port in the service definition below. Back up the configuration before editing and restart Pangolin using your deployment's normal procedure. For a standard Compose service named `pangolin`, `docker compose restart pangolin` reloads its configuration and may briefly interrupt service.
 
-Then route a public HTTPS API hostname to that listener. Pangolin Cloud needs no `config.yml` or Traefik changes; enter `https://api.pangolin.net/v1` in the app.
+Then route a public HTTPS API hostname to that listener. Pangolin Cloud needs no `config.yml` or Traefik changes; enter `https://api.pangolin.net` in the app.
 
 Skip the configuration changes if you already have a working integration endpoint and `openapi.json` loads.
 
@@ -138,7 +138,7 @@ https://api.pangolin.example.net/v1/docs/
 
 The base route should return a healthy response and `openapi.json` should return a large JSON API specification. A blank documentation page can be a Swagger asset/UI problem; if the JSON works, our app can proceed. `/api/v1/docs` on the dashboard hostname is not the integration documentation route. The final slash on `/docs/` is worth trying for relative assets, but is not a guaranteed fix for a blank page.
 
-Enter the **full** public HTTPS API URL in the app: take the hostname inside your `int-api-router` `Host(...)` rule, prefix it with `https://`, and append `/v1`. For the example above, enter `https://api.pangolin.example.net/v1`. The redirect router uses the same hostname for HTTP-to-HTTPS traffic. Do not use the dashboard URL unless your integration router actually uses that hostname, and do not append `/docs` or `/openapi.json` to the app field. The API hostname cannot be reliably inferred from your dashboard URL. If the specification URL returns 502, check that the Pangolin integration listener is enabled and Traefik's `int-api-service` points to the correct Pangolin service and port. The app accepts public DNS destinations with valid HTTPS certificates. It rejects private/reserved addresses, mixed public/private DNS answers, redirects and custom URL path prefixes.
+Enter the public HTTPS API **address** in the app: take the hostname inside your `int-api-router` `Host(...)` rule and prefix it with `https://`. For the example above, enter `https://api.pangolin.example.net`. The app adds `/v1` and shows the resulting API URL. It also accepts a pasted `/v1` URL without doubling the suffix. The redirect router uses the same hostname for HTTP-to-HTTPS traffic. Do not use the dashboard URL unless your integration router actually uses that hostname, and do not append `/docs` or `/openapi.json` to the app field. The API hostname cannot be reliably inferred from your dashboard URL. If the specification URL returns 502, check that the Pangolin integration listener is enabled and Traefik's `int-api-service` points to the correct Pangolin service and port. The app accepts public DNS destinations with valid HTTPS certificates. It rejects private/reserved addresses, mixed public/private DNS answers, redirects and custom URL path prefixes.
 
 ## 4. Create one organization API key
 
@@ -161,13 +161,13 @@ Save the permissions. **Get Resource** and **Get Resource Policy** are separate.
 
 Find the organization ID in the organization's General settings or the first path component after the hostname in its dashboard URL. For example, in `https://pangolin.domain.com/organizationid/settings/api-keys`, the ID is **`organizationid`**. Use the ID, not the display name. [Pangolin's organization-ID guide](https://docs.pangolin.net/manage/organizations/org-id)
 
-Open **Pangolin setup**. For self-hosted Pangolin, enter the full HTTPS integration API URL derived from your `int-api-router` hostname (for example `https://api.pangolin.example.net/v1`). For Cloud, enter `https://api.pangolin.net/v1`. Enter the Pangolin Organization ID and full API key, then select **Find public resources**. Do not add `Bearer`. The API URL is saved in this browser after a successful search. The key remains in page memory for setup actions and is not saved; close the page when finished.
+Open **Pangolin setup**. For self-hosted Pangolin, enter the HTTPS integration API address derived from your `int-api-router` hostname (for example `https://api.pangolin.example.net`). For Cloud, enter `https://api.pangolin.net`. The app adds `/v1`. Enter the Pangolin Organization ID and full API key, then select **Find public resources**. Do not add `Bearer`. The API URL is saved in this browser after a successful search. The key remains in page memory for setup actions and is not saved; close the page when finished.
 
 A pass confirms the scoped reads and expected response shapes. It does not prove target reachability or mTLS enforcement.
 
 ## 5. Create the CA and prepare a disabled resource
 
-In **Certificate authority and devices**, confirm dedicated CA creation and select **Create certificate authority**. Create it once per installation; it is reused for additional devices. If the CA already exists, retain it.
+In **Device certificates**, above Pangolin setup, confirm dedicated CA creation and select **Create certificate authority**. Create it once per installation; it is reused for additional devices. If the CA already exists, retain it. You can do this immediately after Home Assistant setup; it must be done before **Install CA cert**.
 
 Take a protected HA backup including this app's data after CA creation. The current automatic-unlock secret is stored with the encrypted CA key; the backup therefore contains signing access. Standalone encrypted recovery export is not implemented. Do not uninstall the app to update it.
 
@@ -179,9 +179,9 @@ The resource list appears under **Pangolin setup**. Choose the intended Home Ass
 
 ## 6. Install CA trust and enable mTLS
 
-Select **Install CA cert** on the intended resource. The app uploads the public CA through the integration API and reads the policy trust back to verify its fingerprint. If the request fails or the result is uncertain, inspect the resource in Pangolin before trying again. Do not repeatedly click through an uncertain result.
+Select **Install CA cert** on the intended resource. The app uploads the public CA through the integration API and reads the policy trust back to verify its fingerprint. Progress, success and errors appear beside that resource; a missing local CA reports **CA_REQUIRED** there. If the request fails or the result is uncertain, inspect the resource in Pangolin before trying again. Do not repeatedly click through an uncertain result.
 
-Next, in Pangolin open that resource’s **Authentication → Other Methods → Client Certificate (mTLS)**, enable the client-certificate requirement and save. The app installs CA trust but does not turn on mTLS. Keep the resource and target disabled during preparation. [Pangolin's mTLS guide](https://docs.pangolin.net/manage/access-control/mtls)
+For a disabled resource, you may select **Enable mTLS after installing the CA**. The app then updates only that resource’s inline policy through Pangolin’s API and reads it back. The existing **Update Resource Policy** key permission covers this action. If enabling fails after CA installation, the resource row says that CA trust was verified but mTLS was not; use **Enable mTLS** to retry after checking Pangolin. For an active resource, first disable it in Pangolin before using this app to turn on mTLS. Alternatively, in Pangolin open **Authentication → Other Methods → Client Certificate (mTLS)**, enable the requirement and save. Keep the resource and target disabled during preparation. [Pangolin's mTLS guide](https://docs.pangolin.net/manage/access-control/mtls)
 
 Check that the displayed CA fingerprint matches this app's CA SHA-256 fingerprint. Compare certificate fingerprints, not a checksum of the PEM file bytes. When you later enable the target and resource, verify a new connection without a client certificate is rejected and an enrolled device can connect. An API success alone does not prove TLS enforcement.
 

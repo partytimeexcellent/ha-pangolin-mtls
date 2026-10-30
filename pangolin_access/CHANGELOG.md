@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.0-dev.17
+
+- Accept the Pangolin integration API address from its Traefik `Host(...)` rule and add `/v1` automatically. Existing saved `/v1` URLs are shown as the base address without doubling the suffix.
+- Move Device certificates above Pangolin setup so the CA creation step appears before resource installation. Show CA upload progress, success and fixed errors beside the selected resource; leave setup open until the user finishes it.
+- Offer explicit mTLS enablement after verified CA installation on a disabled resource. Update only its inline policy through Pangolin’s `Update Resource Policy` API action and verify the setting by reading it back. Report a partial CA success if mTLS enablement fails.
+
 ## 0.1.0-dev.16
 
 - Restore the full Pangolin integration API URL field. For self-hosted Pangolin, derive the hostname from Traefik's `int-api-router` `Host(...)` rule and enter its HTTPS `/v1` URL; Cloud uses `https://api.pangolin.net/v1`.

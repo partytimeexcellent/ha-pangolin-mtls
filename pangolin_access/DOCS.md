@@ -2,16 +2,16 @@
 
 **Start with the [complete installation tutorial](https://github.com/partytimeexcellent/ha-pangolin-mtls/blob/main/docs/installation.md).** It covers enabling Pangolin's integration API, DNS/Traefik routing, exact key permissions, certificate trust and iOS Companion import. It also separates routine setup from advanced validation.
 
-Pangolin Access creates device certificates and can install its public CA certificate on a selected Pangolin public resource. Resource creation and enabling mTLS remain steps in the Pangolin dashboard. This is an early-access build with outstanding release checks.
+Pangolin Access creates device certificates, installs its public CA on a selected Pangolin public resource, and can enable mTLS on that resource’s inline policy while the resource is disabled. Resource creation and live access testing remain steps in Pangolin. This is an early-access build with outstanding release checks.
 
 ## First installation: short path
 
 1. Install **HA Pangolin Access** from this repository. In **Home Assistant setup**, review the URL, choose and save administrators, then select **Check access**.
 2. Create the certificate authority once in **Device certificates** and take a protected backup of app data.
-3. For self-hosted Pangolin, [enable the integration API](https://docs.pangolin.net/self-host/advanced/integration-api) by setting `enable_integration_api: true` under `flags:` in `config.yml`. In `config/traefik/dynamic_config.yml`, route the hostname in the `int-api-router` `Host(...)` rule to `int-api-service`, which targets Pangolin's integration listener (normally `http://pangolin:3003`). Enter `https://` plus that hostname plus `/v1` in **Pangolin setup**. For Pangolin Cloud, enter `https://api.pangolin.net/v1`. Create an organization API key with the permissions below.
+3. For self-hosted Pangolin, [enable the integration API](https://docs.pangolin.net/self-host/advanced/integration-api) by setting `enable_integration_api: true` under `flags:` in `config.yml`. In `config/traefik/dynamic_config.yml`, route the hostname in the `int-api-router` `Host(...)` rule to `int-api-service`, which targets Pangolin's integration listener (normally `http://pangolin:3003`). Enter `https://` plus that hostname in **Pangolin setup**; the app adds `/v1`. For Pangolin Cloud, enter `https://api.pangolin.net`. Create an organization API key with the permissions below.
 4. In Pangolin, prepare a dedicated HTTPS public resource for Home Assistant, preferably disabled during setup, without a shared policy.
-5. Open **Pangolin setup**. Enter the full Pangolin API URL, Organization ID and API key, select **Find public resources**, then **Install CA cert** on the intended hostname. The Organization ID is the first segment after the hostname in your dashboard URL: `https://pangolin.domain.com/organizationid/settings/api-keys` gives `organizationid`. The app checks the resource before upload and verifies its CA fingerprint afterward.
-6. In Pangolin, enable **Client Certificate (mTLS)** on that resource. Create and import a device certificate in Companion. Enable the target/resource, then verify rejection without a certificate and access with the enrolled device.
+5. Open **Pangolin setup**. Enter the Pangolin API address, Organization ID and API key, select **Find public resources**, then **Install CA cert** on the intended hostname. The Organization ID is the first segment after the hostname in your dashboard URL: `https://pangolin.domain.com/organizationid/settings/api-keys` gives `organizationid`. The app checks the resource before upload and verifies its CA fingerprint afterward; any error appears beside that resource.
+6. For a disabled resource, optionally select **Enable mTLS after installing the CA**. Otherwise enable **Client Certificate (mTLS)** in Pangolin. Create and import a device certificate in Companion. Enable the target/resource, then verify rejection without a certificate and access with the enrolled device.
 
 See the [complete installation tutorial](https://github.com/partytimeexcellent/ha-pangolin-mtls/blob/main/docs/installation.md) for API routing, setup order and device import details.
 
@@ -29,11 +29,11 @@ admin_user_ids:
 home_assistant_origin: ""
 ```
 
-Replace every placeholder. **Home Assistant URL override (optional)** uses HA’s configured `external_url` at startup when blank. An entered `home_assistant_origin` value overrides it; use the exact HA scheme/hostname/port with no path or ingress token. The Web UI shows the effective address and source. Existing explicit values are preserved; clear the field and restart to use automatic mode. If HA has no external URL or Core is unavailable, set a manual override or configure HA first, then restart. Open this app using the selected address. Certificate creation requires an HTTPS Home Assistant URL and verified administrator setup. An empty ID list denies access unless a Core-verified administrator completes first-time setup or an eligible saved administrator is selected. Enter the full Pangolin integration API URL ending in `/v1` in Pangolin setup for automatic CA installation. The self-hosted hostname comes from the Traefik `int-api-router` `Host(...)` rule; Cloud uses `https://api.pangolin.net/v1`. The URL must resolve to public addresses with valid HTTPS. It is saved in this browser after a successful resource search; the API key stays only in page memory.
+Replace every placeholder. **Home Assistant URL override (optional)** uses HA’s configured `external_url` at startup when blank. An entered `home_assistant_origin` value overrides it; use the exact HA scheme/hostname/port with no path or ingress token. The Web UI shows the effective address and source. Existing explicit values are preserved; clear the field and restart to use automatic mode. If HA has no external URL or Core is unavailable, set a manual override or configure HA first, then restart. Open this app using the selected address. Certificate creation requires an HTTPS Home Assistant URL and verified administrator setup. An empty ID list denies access unless a Core-verified administrator completes first-time setup or an eligible saved administrator is selected. Enter the Pangolin integration API address in Pangolin setup; the app adds `/v1`. The self-hosted hostname comes from the Traefik `int-api-router` `Host(...)` rule; Cloud uses `https://api.pangolin.net`. The URL must resolve to public addresses with valid HTTPS. It is saved in this browser after a successful resource search; the API key stays only in page memory.
 
 ## API key permissions
 
-Pangolin setup has its own section above Device certificates. Discovery and installation need the permissions below. Daily device access needs none. Follow the [short Pangolin connection-check routine](https://github.com/partytimeexcellent/ha-pangolin-mtls/blob/main/docs/pangolin-connection-check.md).
+Device certificates, including CA creation, now appears above Pangolin setup. Discovery, CA installation and optional mTLS enablement need the permissions below. Daily device access needs none. Follow the [short Pangolin connection-check routine](https://github.com/partytimeexcellent/ha-pangolin-mtls/blob/main/docs/pangolin-connection-check.md).
 
 | Category | Enable |
 | --- | --- |
@@ -45,7 +45,7 @@ Pangolin setup has its own section above Device certificates. Discovery and inst
 | Resource Policy | Get Resource Policy |
 | Resource Policy | Update Resource Policy |
 
-The upload uses Update Resource Policy to add the CA to the selected resource’s inline policy. This checkbox permits broader policy changes in Pangolin, so use a temporary organization key and revoke it after setup. No delete or root permission is needed. The key stays only in the open page’s memory for setup actions; close the page when done. Keys belong in the app form, never in chat, public logs or a repository URL.
+CA upload and optional mTLS enablement use Update Resource Policy on the selected resource’s inline policy. This checkbox permits broader policy changes in Pangolin, so use a temporary organization key and revoke it after setup. No delete or root permission is needed. The key stays only in the open page’s memory for setup actions; close the page when done. Keys belong in the app form, never in chat, public logs or a repository URL.
 
 ## Adding a device or updating
 
@@ -78,6 +78,6 @@ Initial setup retrieves the signed-in administrator ID automatically when no IDs
 
 ## API automation and the external URL
 
-This app uploads its public CA to an explicitly selected resource and verifies it through the integration API. It does not enable mTLS or rotate the CA. Device identity issuance stays local, phone installation stays manual, and shared-CA individual revocation is unavailable. Daily use does not require a key.
+This app uploads its public CA to an explicitly selected resource and verifies it through the integration API. With explicit selection, it can also enable mTLS on that resource’s inline policy while the resource is disabled. It does not rotate the CA. Device identity issuance stays local, phone installation stays manual, and shared-CA individual revocation is unavailable. Daily use does not require a key.
 
 The automatic external-URL read uses the existing Core API permission, even if expiry notifications are off. It reads the fixed internal Core configuration endpoint, never the configured public URL, and does not modify HA or Supervisor settings. The name **Home Assistant URL override (optional)** is a user-facing label; `home_assistant_origin` remains the YAML key for compatibility and exact-origin request protection.

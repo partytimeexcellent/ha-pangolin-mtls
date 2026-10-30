@@ -93,6 +93,10 @@ aside h3 { margin-top: 0; }
 .pangolin-setup form { margin-top: 16px; }
 .permission-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px 20px; padding-left: 20px; font-size: .88rem; }
 .resource-list { list-style: none; padding: 0; display: grid; gap: 10px; }
-.resource-list li { display: flex; align-items: center; justify-content: space-between; gap: 16px; border: 1px solid var(--line); border-radius: 10px; padding: 14px; overflow-wrap: anywhere; }
+.resource-list li { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; border: 1px solid var(--line); border-radius: 10px; padding: 14px; overflow-wrap: anywhere; }
 .resource-list small { color: var(--muted); }
+.resource-actions { display: grid; justify-items: start; gap: 8px; }
+.resource-actions .check { margin: 0; }
+.resource-feedback { flex-basis: 100%; margin: 0; padding: 10px 12px; border-radius: 8px; background: var(--soft); font-size: .9rem; }
+.resource-feedback.error { border-left: 3px solid #af6811; }
 @media (max-width: 560px) { .resource-list li { align-items: stretch; flex-direction: column; } .permission-list { grid-template-columns: 1fr; } }

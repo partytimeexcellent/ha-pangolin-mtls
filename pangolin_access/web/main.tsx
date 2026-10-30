@@ -65,12 +65,12 @@ function App() {
       {!ready && !adminSaved && <p>Save your administrator selection first.</p>}
       <p role="status" aria-live="polite">{result}</p>
     </details>
+    {ready ? <CertificatePanel /> : <div className="empty-state"><h2>Device certificates</h2><p>Finish Home Assistant setup to create certificates.</p></div>}
     <details className="administration" open={pangolinOpen} onToggle={event => setPangolinOpen(event.currentTarget.open)}>
       <summary>Pangolin setup{pangolinComplete ? ' · Completed in this browser' : ''}</summary>
       <PangolinPanel ready={ready} onInstalled={pangolinInstalled} />
     </details>
-    {pangolinComplete && <p className="status-message" role="status">This browser recorded a successful CA installation. Verify the resource’s current trust in Pangolin, enable client certificate (mTLS), then test access with and without a device certificate.</p>}
-    {ready ? <CertificatePanel /> : <div className="empty-state"><h2>Device certificates</h2><p>Finish Home Assistant setup to create certificates.</p></div>}
+    {pangolinComplete && <p className="status-message" role="status">This browser recorded a successful CA installation. Verify the resource’s current trust and mTLS setting in Pangolin, then test access with and without a device certificate.</p>}
     <footer className="page-footer"><p>Home Assistant sign-in is always required.</p><p>Version {import.meta.env.VITE_APP_VERSION} · Early access</p></footer>
   </main>;
 }

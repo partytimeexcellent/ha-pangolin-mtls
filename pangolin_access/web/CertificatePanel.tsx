@@ -117,7 +117,7 @@ export function CertificatePanel() {
   }
   return <section aria-labelledby="certificate-title">
     <h2 id="certificate-title">Device certificates</h2>
-    <p>Create a certificate for each device, download it and install it in the app you use.</p>
+    <p>Create the certificate authority here first, then install its public CA on the Pangolin resource below. After mTLS is enabled, create a certificate for each device.</p>
     {message && <p className="status-message" role="status" aria-live="polite">{message}</p>}
     {enabled && inventory && <>
       <div className="overview"><div><strong>{inventory.certificates.length}</strong><span>Certificates created</span></div><div><strong>{inventory.certificates.filter(cert => Date.parse(cert.expiresAt) - clock <= 30 * 86_400_000).length}</strong><span>Expiring soon or expired</span></div><div><strong>{inventory.reminders.enabled ? 'On' : 'Off'}</strong><span>Expiry reminders</span></div></div>
