@@ -2,11 +2,24 @@
 
 A Home Assistant Supervisor app for managing device certificates and remote access through Pangolin mTLS.
 
-**Status: Early access, October 23, 2026.** Version `0.1.0-dev.11` refines the setup and daily-use experience with clear configuration labels, responsive device certificate cards and expandable administration and connection checks. See [release readiness](docs/release-readiness.md) for the remaining production-release gates. Local certificate management remains default-off; Pangolin checks are read-only. It cannot configure Pangolin. No prebuilt image or production release has been published.
+**Status: Early access, October 30, 2026.** Version `0.1.0-dev.12` adds public CA installation through Pangolin’s integration API and puts resource selection in app setup. See [release readiness](docs/release-readiness.md) for the remaining production-release gates. Local certificate management remains default-off. The app can upload its public CA to a selected Pangolin public resource; mTLS enablement remains a Pangolin dashboard step. No prebuilt image or production release has been published.
 
 The source, lockfile, app manifest and Dockerfile are in [pangolin_access](pangolin_access/README.md). Native amd64/aarch64 container builds and runtime checks passed on GitHub Actions. Selected HA ingress and initial iOS Companion checks passed as owner-reported results; broader compatibility remains unverified. See [local development](docs/development.md) and [prototype validation results](docs/phase-2-results.md).
 
-Add `https://github.com/partytimeexcellent/ha-pangolin-mtls` to Home Assistant's app repositories. Follow the [installation tutorial](docs/installation.md) for the simplified first-install path, including Pangolin API setup, then use [iOS enrollment](docs/ios-enrollment.md) for additional devices. The [app documentation](pangolin_access/DOCS.md) provides a short checklist. Upgrading alone does not create a CA or device identity.
+## Install on a new Home Assistant instance
+
+This is a **Home Assistant app** (formerly called an add-on), so install it through the **Home Assistant App Store**, not HACS. [HACS does not handle apps/add-ons](https://hacs.dev/docs/faq/addons/). Use Home Assistant OS or a Supervised installation with the App Store.
+
+1. In Home Assistant, open **Settings → Apps → Install app**.
+2. Open the **⋮** menu in the upper right and select **Repositories**.
+3. Add `https://github.com/partytimeexcellent/ha-pangolin-mtls`, then refresh the App Store if the repository does not appear immediately.
+4. Open **HA Pangolin Access** from the new repository and select **Install**. This development version builds locally, so the first install may take a while.
+5. In the app’s **Configuration**, enable **Set up with your Home Assistant account**. Leave recovery administrator IDs empty for the initial setup. Set Home Assistant’s external URL to the HTTPS address you will use to open the app, or enter that address as the app’s **Home Assistant URL override**. Save and start the app.
+6. Select **Open Web UI** and complete **Check my access → Choose administrators → Save administrators → Finish setup**. Then enable **Certificate creation** in Configuration, save and restart. Create the CA in **Device certificates** and take a protected Home Assistant backup.
+7. To install the public CA into Pangolin, enable its integration API and enter the HTTPS `/v1` API URL in this app’s Configuration. Create an organization API key with the permissions in the [installation guide](docs/installation.md#4-create-one-organization-api-key). In **Set up app access**, enter the organization ID and key, select **Find public resources**, then choose **Install CA cert** on the intended Home Assistant resource.
+8. Enable **Client Certificate (mTLS)** for that resource in Pangolin, enroll a device, and test both rejection without a certificate and access with the enrolled device.
+
+Follow the [full installation tutorial](docs/installation.md) for Pangolin API routing, resource preparation and device enrollment. The [app documentation](pangolin_access/DOCS.md) provides a shorter checklist. Upgrading alone does not create a CA or device identity.
 
 The intended deployment is one Supervisor-managed container containing the dashboard, API, PKI, enrollment, database, and diagnostics. An existing Pangolin server and a connected site that can reach Home Assistant are prerequisites. No additional certificate service or Compose deployment is required.
 

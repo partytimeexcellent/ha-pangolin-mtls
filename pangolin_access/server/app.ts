@@ -10,8 +10,9 @@ import type { Options } from './config.js';
 import { ExpiryReminders, type SendNotice } from './reminders.js';
 import { PkiService } from './pki.js';
 import { PkiError } from './openssl.js';
-import { inspectPangolin, publicReader, PangolinError, type ReadJson } from './pangolin.js';
+import { inspectPangolin, publicReader, publicWriter, PangolinError, type ReadJson, type WriteJson } from './pangolin.js';
 import { inspectResource, resourceSelectionSchema } from './resource-inspection.js';
+import { caInstallSchema, installCa } from './ca-install.js';
 
 const peer = '172.30.32.2';
 const sessionLifetime = 5 * 60_000;
@@ -38,6 +39,7 @@ export async function createApp(options: Options, settings: {
   pki?: PkiService;
   notificationSender?: SendNotice;
   pangolinReader?: (base: string, key: string, signal: AbortSignal) => Promise<ReadJson>;
+  pangolinWriter?: (base: string, key: string, signal: AbortSignal) => Promise<WriteJson>;
 } = {}) {
   const now = settings.now ?? Date.now;
   const sessions = new Map<string, Session>();
@@ -201,6 +203,24 @@ export async function createApp(options: Options, settings: {
       const read = await (settings.pangolinReader ?? publicReader)(options.pangolin_api_url, input.data.apiKey, controller.signal);
       if (resourceCheck) return await inspectResource(read, input.data.orgId, resourceSelectionSchema.parse(input.data));
       return await inspectPangolin(read, input.data.orgId);
+    } finally { clearTimeout(timer); controller.abort(); input.data.apiKey = ''; pangolinBusy = false; }
+  });
+
+  app.post('/api/pangolin/install-ca', { config: { rateLimit: { max: 2, timeWindow: 60_000 } } }, async (request) => {
+    const service = requirePki();
+    if (!options.pangolin_api_url) throw new PangolinError('PANGOLIN_URL_REQUIRED', 400);
+    const input = caInstallSchema.safeParse(request.body);
+    request.body = undefined;
+    if (!input.success) throw new PangolinError('PANGOLIN_INPUT', 400);
+    if (pangolinBusy) throw new PangolinError('PANGOLIN_BUSY', 409);
+    pangolinBusy = true;
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 60_000);
+    request.raw.socket.setTimeout?.(65_000);
+    try {
+      const read = await (settings.pangolinReader ?? publicReader)(options.pangolin_api_url, input.data.apiKey, controller.signal);
+      const write = await (settings.pangolinWriter ?? publicWriter)(options.pangolin_api_url, input.data.apiKey, controller.signal);
+      return await installCa(read, write, input.data.orgId, resourceSelectionSchema.parse(input.data), service.publicCertificate());
     } finally { clearTimeout(timer); controller.abort(); input.data.apiKey = ''; pangolinBusy = false; }
   });
 

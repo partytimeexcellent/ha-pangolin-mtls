@@ -15,13 +15,17 @@ const errors: Record<string, string> = {
   PANGOLIN_BUSY: 'Another Pangolin check is running. Wait and try again.',
   PANGOLIN_ADDRESS_BLOCKED: 'The API hostname must resolve only to public addresses. Private and reserved destinations are blocked.',
   PANGOLIN_AUTH_FAILED: 'Pangolin rejected the API key.',
-  PANGOLIN_PERMISSION_DENIED: 'The API key lacks access to a required read operation or this organization.',
+  PANGOLIN_PERMISSION_DENIED: 'The API key lacks access to this organization or a required read or CA upload operation.',
   PANGOLIN_NOT_FOUND: 'An API route or organization was not found. Check the integration API URL and organization ID.',
   PANGOLIN_REDIRECT: 'The API redirected the request. Configure its final HTTPS URL; redirects are refused.',
   PANGOLIN_UPSTREAM: 'Pangolin returned an unsuccessful response.',
   PANGOLIN_CONTRACT: 'The API response does not match the inspected Pangolin contract. Check that this is the integration API.',
   PANGOLIN_RESPONSE_LIMIT: 'The API response exceeded the check’s size limit.',
   PANGOLIN_NETWORK: 'The API could not be reached securely within the deadline. Check DNS, HTTPS certificate and network access.',
+  PANGOLIN_RESOURCE_INELIGIBLE: 'This resource is not eligible for automatic CA installation. Use an HTTPS public resource with an inline policy and a unique hostname.',
+  PANGOLIN_TRUST_FULL: 'This resource already has 20 trusted CAs. Review its trust in Pangolin.',
+  PANGOLIN_WRITE_UNCERTAIN: 'The upload result is uncertain. Inspect this resource’s trusted CAs in Pangolin before trying again.',
+  CA_INVALID: 'The local CA certificate is invalid or expired.',
   CERTIFICATES_DISABLED: 'Turn on Enable certificate creation in Configuration, then restart the app.',
   HTTPS_REQUIRED: 'Use an HTTPS Home Assistant origin for this operation.',
   REPLACEMENT_INVALID: 'Choose an existing certificate to replace, or download the replacement before confirming its device test.',
@@ -46,7 +50,7 @@ const pangolinStages: Record<string, string> = {
   specification: 'API specification', organization: 'Organization (Get Organization)', sites: 'Sites (List Sites)',
   domains: 'Domains (List Organization Domains)', resources: 'Resource search (List Resources)',
   resource: 'Resource details (Get Resource)', policies: 'Policies (Get Resource Policy)', targets: 'Targets (List Targets)',
-  trust: 'Policy certificate trust (Get Resource Policy)', hostname: 'Hostname search (List Resources)', recheck: 'Resource recheck (Get Resource)',
+  trust: 'CA trust read or upload', hostname: 'Hostname search (List Resources)', recheck: 'Resource recheck (Get Resource)',
 };
 
 export async function checked(response: Response) {

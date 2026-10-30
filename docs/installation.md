@@ -1,6 +1,6 @@
 # Install HA Pangolin Access and connect iOS Companion
 
-This tutorial covers the working path in `0.1.0-dev.9`: create client certificates in the Home Assistant app, optionally inspect Pangolin through its integration API, configure a dedicated mTLS resource manually, and import a device identity into Companion. The API instructions were checked against Pangolin 1.25.2. Later versions may change screens or contracts.
+This tutorial covers creating a local CA, installing its public certificate on a selected Pangolin resource through the integration API, enabling mTLS, and importing a device identity into Companion. The API instructions were checked against Pangolin 1.25.2. Later versions may change screens or contracts.
 
 This is an early-access version. See [release readiness](release-readiness.md) for the remaining checks before a production release. Initial client, cellular, restart and fresh TLS rejection checks have passed within the scope in [recorded results](phase-2-results.md). Backup restoration, rotation and broader compatibility remain separate release gates.
 
@@ -8,7 +8,7 @@ This is an early-access version. See [release readiness](release-readiness.md) f
 
 | Task | Steps |
 | --- | --- |
-| First installation | Complete sections 1–2 and 5–8, including the short connection checks; sections 3–4 are optional API diagnostics |
+| First installation | Complete sections 1–8; the integration API is required for automatic CA installation |
 | Another device on the same installation | Follow [Add another device](#add-another-device); reuse the existing CA and Pangolin resource |
 | App update | Preserve app data, read the changelog, update and reopen the UI; do not recreate the CA |
 | Investigating a problem | Use [Troubleshooting](troubleshooting.md) |
@@ -69,7 +69,7 @@ This is the address used to open the certificate app behind HA ingress, which ca
 
 ## 3. Enable Pangolin's integration API
 
-**Optional advanced diagnostics.** Manual certificate setup through the Pangolin dashboard does not require enabling this API. Skip sections 3–4 and continue at [Create the CA](#5-create-the-ca-and-prepare-a-disabled-resource) if you do not want inspection tools.
+The app uses this API to list public resources and install the CA. Manual dashboard upload is an alternative if you choose not to enable the API.
 
 Skip the configuration changes if you already have a working integration endpoint and `openapi.json` loads.
 
@@ -143,9 +143,9 @@ The base route should return a healthy response and `openapi.json` should return
 
 The value to enter in our app is exactly the HTTPS base ending in **`/v1`**, without `/docs` or `/openapi.json`. The app accepts public DNS destinations with valid HTTPS certificates. It rejects private/reserved addresses, mixed public/private DNS answers, redirects and custom URL path prefixes.
 
-## 4. Create one organization API key with the correct reads
+## 4. Create one organization API key
 
-Pangolin API forms are hidden by default under **Pangolin connection checks**. For a short setup/troubleshooting routine, see [Pangolin connection checks](pangolin-connection-check.md). Daily access and local certificate management do not require a Pangolin API key.
+The Pangolin setup form is under **Set up app access**. The key is needed for discovery and CA upload; normal device access and local issuance do not need it.
 
 Create the key within the organization containing your new resource. Enable all seven permissions now to avoid adding them in separate troubleshooting rounds:
 
@@ -158,8 +158,9 @@ Create the key within the organization containing your new resource. Enable all 
 | Resource | Get Resource | `getResource` |
 | Resource Policy | Get Resource Policy | `getResourcePolicy` |
 | Target | List Targets | `listTargets` |
+| Resource | Create Resource mTLS Certificate | `createResourceMtlsCertificate` |
 
-Save the permission changes. **Get Resource** and **Get Resource Policy** are separate permissions. No write/delete grants, root key or organization-listing grant is required by the current app. You make the later resource/trust changes manually in Pangolin's dashboard.
+Save the permissions. **Get Resource** and **Get Resource Policy** are separate. The CA upload needs **Create Resource mTLS Certificate**. No root key, organization-listing grant, update-resource grant or delete grant is needed.
 
 Find the organization ID in the organization's General settings or the first path component in its dashboard URL. For example, `https://pangolin.example.net/home-lab/settings/sites` means organization ID `home-lab`. Use the ID, not the display name. [Pangolin's organization-ID guide](https://docs.pangolin.net/manage/organizations/org-id)
 
@@ -169,7 +170,7 @@ Add the API URL to this app's HA Configuration, save and restart:
 pangolin_api_url: "https://api.pangolin.example.net/v1"
 ```
 
-Expand **Pangolin connection checks**. In **Check your Pangolin connection**, enter the organization ID and the full API key as provided by Pangolin, then select **Check connection**. Do not add the word `Bearer`; the app does that. The key is used for that check only, cleared from the field, and not saved to app configuration or the database. Reenter it for another check.
+Open **Set up app access → Connect Pangolin and install the CA**. Enter the organization ID and full API key, then select **Find public resources**. Do not add `Bearer`. The key remains in this page’s memory for setup actions and is not saved; close the page when finished.
 
 A pass confirms the scoped reads and expected response shapes. It does not prove target reachability or mTLS enforcement.
 
@@ -179,23 +180,19 @@ In **Certificate authority and devices**, confirm dedicated CA creation and sele
 
 Take a protected HA backup including this app's data after CA creation. The current automatic-unlock secret is stored with the encrypted CA key; the backup therefore contains signing access. Standalone encrypted recovery export is not implemented. Do not uninstall the app to update it.
 
-Select **Download public CA certificate**, which produces `ha-pangolin-ca.pem`. Only this public certificate goes to Pangolin. The device `.p12` and CA private key do not.
+The app uploads only the CA public certificate. **Download public CA certificate** remains available for manual review or dashboard installation. The device `.p12` and CA private key are never sent to Pangolin.
 
 In Pangolin, create a **separate HTTPS public resource** for `ha-mtls.example.net`, then disable it before attaching the real HA backend. Keep its target absent or disabled during preparation. Do not assign a shared resource policy. Choose the connected site and backend destination that can reach HA; if the UI creates a target, explicitly disable that target too. A disabled resource and a disabled target are two separate controls.
 
-If using the optional API diagnostics, open Advanced and select **Inspect resource configuration (optional)**. Enter its exact Pangolin **resource identifier**, expected hostname without scheme/path, organization ID and key. Select **Inspect resource**. Its identifier is visible in Pangolin resource settings and is not necessarily its display name.
+The resource list appears under **Set up app access**. Choose the intended Home Assistant hostname. Only HTTPS public resources with a hostname show **Install CA cert**. The app then checks the exact resource, organization, inline policy, hostname conflicts and existing trust. A shared-policy resource is refused because uploading there could affect other resources. If the CA is already present, the app reports that without uploading again. Pangolin's limit is 20 trusted CA entries per resource.
 
-Expected preparation state: resource disabled, HTTPS on, inline policy, no CA trust yet, mTLS off. Review any existing authentication or rules before changing them. An attached disabled target still produces a presence finding; that does not mean it is enabled. Shared policies and incomplete results require manual review. The inspector does not inventory every redirect, wildcard overlap or manual Traefik router; use a dedicated hostname without conflicting routes.
+## 6. Install CA trust and enable mTLS
 
-## 6. Add CA trust and enable mTLS while preparation stays disabled
+Select **Install CA cert** on the intended resource. The app uploads the public CA through the integration API and reads the policy trust back to verify its fingerprint. If the request fails or the result is uncertain, inspect the resource in Pangolin before trying again. Do not repeatedly click through an uncertain result.
 
-On that resource, open **Authentication → Other Methods → Client Certificate (mTLS)**. Upload `ha-pangolin-ca.pem`, enable the client-certificate requirement and save. If the interface requires opening/enabling the mTLS section before upload, complete the upload before saving the requirement. Keep the resource and target disabled. [Pangolin's mTLS guide](https://docs.pangolin.net/manage/access-control/mtls)
+Next, in Pangolin open that resource’s **Authentication → Other Methods → Client Certificate (mTLS)**, enable the client-certificate requirement and save. The app installs CA trust but does not turn on mTLS. Keep the resource and target disabled during preparation. [Pangolin's mTLS guide](https://docs.pangolin.net/manage/access-control/mtls)
 
-If API diagnostics are enabled, run **Inspect resource** again. Expect inline policy mTLS **on**, one CA entry, and resource/target **disabled**. Compare the returned CA fingerprint with the CA SHA-256 fingerprint in our app. Pangolin's certificate-detail screen is not needed when using the inspector, which returns this metadata. If you skipped API setup, review the mTLS setting, resource/target and uploaded public CA in Pangolin’s dashboard, then perform the actual client checks in section 8; do not claim an API fingerprint comparison you did not run.
-
-Compare **certificate fingerprints**, not the SHA-256 checksum of the `.pem` file's bytes. Colons and letter case can be normalized; the hex digits must agree.
-
-At this stage, findings for **existing trust**, **mTLS already on** and **targets already attached** are expected when they describe the configuration you just created. They are review reminders, not an instruction to delete the CA or recreate the resource. Unexpected trust, shared policy or identity/hostname mismatches must be resolved first.
+Check that the displayed CA fingerprint matches this app's CA SHA-256 fingerprint. Compare certificate fingerprints, not a checksum of the PEM file bytes. When you later enable the target and resource, verify a new connection without a client certificate is rejected and an enrolled device can connect. An API success alone does not prove TLS enforcement.
 
 ## 7. Add a device and install its certificate
 
@@ -261,4 +258,4 @@ For updates, read the changelog, take a protected backup, update in place and co
 
 With dev.6, turn on **Certificate expiry reminders** (`enable_home_assistant_notifications` in YAML) in app Configuration and restart if you want expiry reminders in the HA notification panel. Enable **Start on boot** to keep checks running after host restarts. Phone push delivery is not included. Existing certificates are tracked without recreating them. For the replacement workflow, notification behavior and pre-update backup instructions, see [certificate management](certificate-management.md#expiry-reminders).
 
-The app can now download the encrypted enrollment package as **iOS mTLS installer.zip**, avoiding the manual Finder compression step. For iOS/iPadOS, use the single installer ZIP download and keep the password separate. Pangolin setup, CA upload and initial test-resource activation are still manual. Verified administrator setup can retrieve the current ID automatically. Complete **Check my access → Choose administrators → Save administrators → Finish setup**. The administration card then stays collapsed. Actual Core permission acceptance needs validation.
+The app can now download the encrypted enrollment package as **iOS mTLS installer.zip**, avoiding the manual Finder compression step. For iOS/iPadOS, use the single installer ZIP download and keep the password separate. Pangolin resource creation, mTLS enablement and initial test-resource activation remain manual; CA upload can use the app. Verified administrator setup can retrieve the current ID automatically. Complete **Check my access → Choose administrators → Save administrators → Finish setup**. The administration card stays open for Pangolin setup. Actual Core permission acceptance needs validation.

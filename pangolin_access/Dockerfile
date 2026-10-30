@@ -11,10 +11,10 @@ RUN npm run build && npm prune --omit=dev
 FROM node:24.22.1-bookworm-slim
 RUN apt-get update && apt-get install -y --no-install-recommends openssl ca-certificates \
     && rm -rf /var/lib/apt/lists/*
-ARG BUILD_VERSION=0.1.0-dev.11
+ARG BUILD_VERSION=0.1.0-dev.12
 ARG BUILD_ARCH
 LABEL io.hass.name="HA Pangolin Access" \
-      io.hass.description="Local client certificate prototype; Pangolin changes disabled" \
+      io.hass.description="Local client certificates and selected Pangolin CA installation" \
       io.hass.type="app" \
       io.hass.version="${BUILD_VERSION}" \
       io.hass.arch="${BUILD_ARCH}"

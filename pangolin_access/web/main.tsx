@@ -13,14 +13,13 @@ function App() {
   const [ready, setReady] = useState(false);
   const [setupOpen, setSetupOpen] = useState(true);
   const [verified, setVerified] = useState(false);
-  const [advanced, setAdvanced] = useState(false);
   const [externalUrl, setExternalUrl] = useState<{ homeAssistantUrl: string; homeAssistantUrlSource: string } | null>(null);
   useEffect(() => {
     void (async () => {
       try {
         const response = await checked(await fetch('./api/status', { cache: 'no-store', credentials: 'same-origin', redirect: 'error', signal: AbortSignal.timeout(10_000) }));
         const administration = z.object({ setupComplete: z.boolean() }).parse(await (await checked(await fetch('./api/administration-status', { cache: 'no-store', credentials: 'same-origin', redirect: 'error', signal: AbortSignal.timeout(10_000) }))).json());
-        setReady(administration.setupComplete); setSetupComplete(administration.setupComplete); setSetupOpen(!administration.setupComplete);
+        setReady(administration.setupComplete); setSetupComplete(administration.setupComplete); setSetupOpen(true);
         setExternalUrl(z.object({ homeAssistantUrl: z.string().url(), homeAssistantUrlSource: z.enum(['configuration', 'home-assistant']) }).parse(await response.json()));
       } catch { /* Existing access-check flow reports authorization failures safely. */ }
     })();
@@ -40,7 +39,7 @@ function App() {
     try {
       await protectedPost('./api/authorization-check', {});
       await protectedPost('./api/administrators/finish', {});
-      setReady(true); setSetupComplete(true); setSetupOpen(false); setResult('Administration setup complete.');
+      setReady(true); setSetupComplete(true); setSetupOpen(true); setResult('Administration setup complete. Continue with Pangolin setup below.');
     } catch { setResult('Could not finish setup. Save your administrator selection and check access again.'); }
     finally { setBusy(false); }
   }
@@ -49,7 +48,7 @@ function App() {
     <h1>Pangolin Access</h1>
     <p className="intro">Create and manage certificates for your devices.</p></header>
     <details className="administration" open={setupOpen} onToggle={event => setSetupOpen(event.currentTarget.open)}>
-      <summary>{setupComplete ? 'App access · Set up' : 'Set up app access'}</summary>
+      <summary>Set up app access</summary>
       <h2>Who can manage this app?</h2>
       <p>You must be signed in as an active Home Assistant administrator to set up this app. We’ll find your account automatically. No user ID copying is needed.</p>
       {externalUrl && <details className="subdetails"><summary>Home Assistant address</summary><p>External URL: <span className="fingerprint">{externalUrl.homeAssistantUrl}</span> ({externalUrl.homeAssistantUrlSource === 'home-assistant' ? 'from Home Assistant settings' : 'app configuration override'}). Change Home Assistant URL override in Configuration if you use a different address.</p></details>}
@@ -58,12 +57,9 @@ function App() {
       <p role="status" aria-live="polite">{result}</p>
       {verified && <AdministratorPanel onSaved={() => { setSetupComplete(false); setResult('Selection saved. Select Finish setup to confirm access and continue.'); }} />}
       {verified && <button onClick={finish} disabled={busy}>Finish setup</button>}
+      <PangolinPanel ready={ready} />
     </details>
     {ready ? <CertificatePanel /> : <div className="empty-state"><h2>Your devices will appear here</h2><p>Finish setting up app access to start creating device certificates.</p></div>}
-    <details className="advanced" onToggle={(event) => setAdvanced(event.currentTarget.open)}>
-      <summary>Pangolin connection checks</summary>
-      {advanced && <PangolinPanel />}
-    </details>
     <footer className="page-footer"><p>Home Assistant sign-in is always required.</p><p>Version {import.meta.env.VITE_APP_VERSION} · Early access</p></footer>
   </main>;
 }

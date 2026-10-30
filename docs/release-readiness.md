@@ -1,12 +1,12 @@
 # Release readiness
 
-Updated October 23, 2026. Current working version: 0.1.0-dev.11, early access.
+Updated October 30, 2026. Current working version: 0.1.0-dev.12, early access.
 
 The daily interface now uses finished product language. That does not change the release status: a polished interface is one part of a production release. The [validation plan](validation-plan.md) defines the checks; [recorded results](phase-2-results.md) distinguishes local fixtures from actual HA/device/edge observations.
 
 ## What works today
 
-The app can create a dedicated certificate authority, issue encrypted device installers, track expiry, guide replacement and perform optional read-only Pangolin checks. Opt-in first setup can retrieve the signed-in HA administrator's ID and save a selection without copying it. Selected ingress, Companion and fresh TLS rejection checks have recorded results. Certificate creation is default-off; installation and Pangolin trust setup require explicit manual actions.
+The app can create a dedicated certificate authority, issue encrypted device installers, track expiry, guide replacement and list Pangolin public resources and install its public CA on an explicitly selected resource. Opt-in first setup can retrieve the signed-in HA administrator's ID and save a selection without copying it. Selected ingress, Companion and fresh TLS rejection checks have recorded results. Certificate creation is default-off; installation and mTLS enablement and live enforcement testing require explicit manual actions.
 
 ## Still pending before a production release
 
@@ -23,9 +23,9 @@ Phase 3 continues to require successful POC validation and owner review. This re
 
 ## Interface organization
 
-- **Set up app access** guides account verification and explicit administrator selection. After confirmation it becomes the collapsed **App access · Set up** section.
+- **Set up app access** guides account verification and explicit administrator selection. After confirmation, the same section guides Pangolin resource selection and CA installation.
 - **Device certificates** is the daily workspace: expiry overview, certificate cards, replacement and **Add a device**. Certificate authority details, reminder guidance and certificate identifiers expand on demand.
 - **Install on your device** appears after certificate creation, with a separately displayed password, one-use download and installation steps.
-- **Pangolin connection checks** is optional and closed by default. Expanding it does not contact Pangolin. Collapsing clears its form state.
+- **Connect Pangolin and install the CA** lists public resources and uploads the local CA public certificate on explicit selection. The key stays in the open page only.
 
 Configuration labels describe the action or decision. Existing option keys/defaults remain compatible; **Recovery administrator IDs (optional)** is an escape hatch rather than an ordinary setup prerequisite. The UI retains relevant limits (for example, replacement does not revoke an old identity) beside the affected workflow.

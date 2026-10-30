@@ -14,7 +14,7 @@ function fixture(calls: Array<[string, boolean]>): ReadJson {
     if (path === '/org/fixture') return wrap({ org: { orgId: 'fixture', name: 'Fixture', secret: 'never-return' } });
     if (path.includes('/sites?')) return wrap({ sites: [{ siteId: 1, niceId: 'fixture-site', name: 'Site', online: true, pubKey: 'never-return' }], pagination: { total: 25 } });
     if (path.includes('/domains?')) return wrap({ domains: [{ domainId: 'fixture-domain', baseDomain: 'example.test', verified: true, errorMessage: 'never-return' }], pagination: { total: 1 } });
-    if (path.includes('/public-resources?')) return wrap({ resources: [{ resourceId: 2, name: 'Resource', fullDomain: 'ha.example.test', ssl: true, mtls: false, enabled: true, targets: [{ ip: 'never-return' }] }], pagination: { total: 1 } });
+    if (path.includes('/public-resources?')) return wrap({ resources: [{ resourceId: 2, niceId: 'resource', name: 'Resource', fullDomain: 'ha.example.test', ssl: true, mtls: false, enabled: true, targets: [{ ip: 'never-return' }] }], pagination: { total: 1 } });
     throw new Error('unexpected request');
   };
 }
@@ -33,7 +33,7 @@ test('inventory checks deployed spec, bounds pagination and strips unrelated fie
   assert.deepEqual(calls, [['/openapi.json', false], ['/org/fixture', true], ['/org/fixture/sites?pageSize=20&page=1', true], ['/org/fixture/domains?limit=20&offset=0', true], ['/org/fixture/public-resources?pageSize=20&page=1', true]]);
   assert.equal(result.sites.pagination.total, 25);
   assert.equal(result.mtlsRoutesAdvertised, false);
-  assert.equal(result.scope, 'read-only-first-page');
+  assert.equal(result.scope, 'read-only-resources');
   assert.ok(!JSON.stringify(result).includes('never-return'));
 });
 

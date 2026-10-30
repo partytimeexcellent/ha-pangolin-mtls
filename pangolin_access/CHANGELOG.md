@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.0-dev.12
+
+- List Pangolin public resources in Set up app access and upload the local CA public certificate to an explicitly selected HTTPS resource. Verify trust by reading back the CA fingerprint.
+- Refuse shared policies, conflicting hostnames, non-HTTPS resources and full trust lists. Avoid duplicate uploads and report uncertain writes for reconciliation.
+- Update the setup UI, API permissions and installation documentation. mTLS enablement and live TLS verification remain explicit setup steps.
+
 ## 0.1.0-dev.11
 
 - Refine configuration labels, setup, device creation and installation guidance. Remove development-phase headings from everyday screens while retaining an early-access release label.
