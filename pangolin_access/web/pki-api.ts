@@ -27,6 +27,8 @@ const errors: Record<string, string> = {
   PANGOLIN_WRITE_UNCERTAIN: 'The upload result is uncertain. Inspect this resource’s trusted CAs in Pangolin before trying again.',
   CA_INVALID: 'The local CA certificate is invalid or expired.',
   CERTIFICATES_DISABLED: 'Certificate management is unavailable. Check the app startup log and restart the app.',
+  INVALID_REMINDER_SETTING: 'Choose whether certificate expiry reminders are on or off.',
+  REMINDERS_UNAVAILABLE: 'Home Assistant notifications are unavailable. Check the app startup log and Core API permission.',
   HTTPS_REQUIRED: 'Use an HTTPS Home Assistant origin for this operation.',
   REPLACEMENT_INVALID: 'Choose an existing certificate to replace, or download the replacement before confirming its device test.',
   CONFIRMATION_REQUIRED: 'Explicit confirmation is required.',

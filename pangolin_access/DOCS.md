@@ -40,12 +40,12 @@ Pangolin setup has its own section above Device certificates. Discovery and inst
 | Organization | Get Organization |
 | Domain | List Organization Domains |
 | Site | List Sites |
-| Resource | List Resources; Get Resource |
-| Resource Policy | Get Resource Policy |
+| Resource | Get Resource; List Resources |
 | Target | List Targets |
-| Resource | Create Resource mTLS Certificate |
+| Resource Policy | Get Resource Policy |
+| Resource Policy | Update Resource Policy |
 
-The upload requires the Create Resource mTLS Certificate write permission. No delete or root permission is needed. The key stays only in the open page’s memory for setup actions; close the page when done. Keys belong in the app form, never in chat, public logs or a repository URL.
+The upload uses Update Resource Policy to add the CA to the selected resource’s inline policy. This checkbox permits broader policy changes in Pangolin, so use a temporary organization key and revoke it after setup. No delete or root permission is needed. The key stays only in the open page’s memory for setup actions; close the page when done. Keys belong in the app form, never in chat, public logs or a repository URL.
 
 ## Adding a device or updating
 
@@ -68,7 +68,7 @@ A protected Supervisor backup is the current recovery mechanism; restoration nee
 
 ## Reminders and replacement (dev.6)
 
-Take a protected backup before updating; metadata migrates to version 2 and older builds cannot open it. Enable `enable_home_assistant_notifications` and restart for optional HA notification-panel reminders; also enable **Start on boot** for checks after a host restart. Mobile push is not included. The app requests Core API access for this feature even when notifications are off.
+Take a protected backup before updating; metadata migrates to version 2 and older builds cannot open it. Use **Device certificates → Expiry reminders** to turn HA notification-panel reminders on or off; also enable **Start on boot** for checks after a host restart. Mobile push is not included. The app requests Core API access for this feature even when notifications are off.
 
 Use **Replace certificate** to issue a fresh identity, import it inside Companion and test a new external connection. Confirm the test in the new inventory row to suppress older-record reminders. The old certificate remains valid until expiry. Choose **Download installer (.zip)** to avoid manual compression before AirDrop; keep its password separate. See the [full certificate guide](https://github.com/partytimeexcellent/ha-pangolin-mtls/blob/main/docs/certificate-management.md).
 

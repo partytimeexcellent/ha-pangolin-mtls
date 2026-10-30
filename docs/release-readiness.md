@@ -1,6 +1,6 @@
 # Release readiness
 
-Updated October 30, 2026. Current working version: 0.1.0-dev.13, early access.
+Updated October 30, 2026. Current working version: 0.1.0-dev.14, early access.
 
 The daily interface now uses finished product language. That does not change the release status: a polished interface is one part of a production release. The [validation plan](validation-plan.md) defines the checks; [recorded results](phase-2-results.md) distinguishes local fixtures from actual HA/device/edge observations.
 
@@ -27,4 +27,4 @@ Phase 3 continues to require successful POC validation and owner review. Live in
 - **Device certificates** is the daily workspace: expiry overview, certificate cards, replacement and **Add a device**. Certificate authority details, reminder guidance and certificate identifiers expand on demand.
 - **Install on your device** appears after certificate creation, with a separately displayed password, one-use download and installation steps.
 
-Configuration labels describe the action or decision. Existing option keys/defaults remain compatible; **Recovery administrator IDs (optional)** is an escape hatch rather than an ordinary setup prerequisite. The UI retains relevant limits (for example, replacement does not revoke an old identity) beside the affected workflow.
+The Home Assistant URL override remains in Configuration because the app needs a trusted origin before opening its UI. Expiry reminders are managed in Device certificates and saved in app data; a retained Supervisor reminder value is imported on first start. **Recovery administrator IDs (optional)** is an escape hatch rather than an ordinary setup prerequisite. The UI retains relevant limits (for example, replacement does not revoke an old identity) beside the affected workflow.

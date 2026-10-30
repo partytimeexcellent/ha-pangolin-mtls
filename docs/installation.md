@@ -153,13 +153,13 @@ Create the key within the organization containing your new resource. Enable all 
 | Organization | Get Organization | `getOrg` |
 | Domain | List Organization Domains | `listOrgDomains` |
 | Site | List Sites | `listSites` |
-| Resource | List Resources | `listResources` |
 | Resource | Get Resource | `getResource` |
-| Resource Policy | Get Resource Policy | `getResourcePolicy` |
+| Resource | List Resources | `listResources` |
 | Target | List Targets | `listTargets` |
-| Resource | Create Resource mTLS Certificate | `createResourceMtlsCertificate` |
+| Resource Policy | Get Resource Policy | `getResourcePolicy` |
+| Resource Policy | Update Resource Policy | `updateResourcePolicy` |
 
-Save the permissions. **Get Resource** and **Get Resource Policy** are separate. The CA upload needs **Create Resource mTLS Certificate**. No root key, organization-listing grant, update-resource grant or delete grant is needed.
+Save the permissions. **Get Resource** and **Get Resource Policy** are separate. The CA upload uses **Update Resource Policy** on the selected resource’s own inline policy. The resource-specific create-certificate action is absent from Pangolin 1.25.3’s API-key form, even though its API route exists. Update Resource Policy grants broader policy changes, so use a temporary organization key and revoke it after setup. No root key, organization-listing grant, update-resource grant or delete grant is needed.
 
 Find the organization ID in the organization's General settings or the first path component in its dashboard URL. For example, `https://pangolin.example.net/home-lab/settings/sites` means organization ID `home-lab`. Use the ID, not the display name. [Pangolin's organization-ID guide](https://docs.pangolin.net/manage/organizations/org-id)
 
@@ -249,6 +249,6 @@ For updates, read the changelog, take a protected backup, update in place and co
 
 ## Optional reminders and future replacements
 
-With dev.6, turn on **Certificate expiry reminders** (`enable_home_assistant_notifications` in YAML) in app Configuration and restart if you want expiry reminders in the HA notification panel. Enable **Start on boot** to keep checks running after host restarts. Phone push delivery is not included. Existing certificates are tracked without recreating them. For the replacement workflow, notification behavior and pre-update backup instructions, see [certificate management](certificate-management.md#expiry-reminders).
+In **Device certificates → Expiry reminders**, select **Turn on reminders** if you want expiry notices in the HA notification panel. The choice is saved in app data and applies without a restart. Enable **Start on boot** to keep checks running after host restarts. Phone push delivery is not included. Existing certificates are tracked without recreating them. For the replacement workflow, notification behavior and pre-update backup instructions, see [certificate management](certificate-management.md#expiry-reminders).
 
 The app can now download the encrypted enrollment package as **iOS mTLS installer.zip**, avoiding the manual Finder compression step. For iOS/iPadOS, use the single installer ZIP download and keep the password separate. Pangolin resource creation, mTLS enablement and initial test-resource activation remain manual; CA upload can use the app. Verified administrator setup can retrieve the current ID automatically. Complete **Home Assistant setup: URL → Administrator → Check access**. The Home Assistant setup card then collapses, while Pangolin setup remains available. Actual Core permission acceptance needs validation.

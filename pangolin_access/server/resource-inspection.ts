@@ -80,7 +80,8 @@ export async function inspectResource(read: ReadJson, orgId: string, selection: 
     if (activePolicy.sso !== false || activePolicy.applyRules !== false || activePolicy.emailWhitelistEnabled !== false ||
       activePolicy.passwordId !== null || activePolicy.pincodeId !== null || activePolicy.headerAuth?.id != null) issues.push('OTHER_AUTH_OR_RULES');
     return { checkedAt: new Date().toISOString(), resource: selected,
-      policy: { source: policyData.sharedPolicy ? 'shared' as const : 'inline' as const, name: activePolicy.name,
+      policy: { source: policyData.sharedPolicy ? 'shared' as const : 'inline' as const,
+        resourcePolicyId: activePolicy.resourcePolicyId, name: activePolicy.name,
         mtlsEnabled: activePolicy.mtlsEnabled, sso: activePolicy.sso, rules: activePolicy.applyRules,
         emailWhitelist: activePolicy.emailWhitelistEnabled, password: activePolicy.passwordId !== null,
         pincode: activePolicy.pincodeId !== null, headerAuth: activePolicy.headerAuth?.id != null },

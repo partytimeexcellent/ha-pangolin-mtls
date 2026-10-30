@@ -48,15 +48,15 @@ export function PangolinPanel({ ready, onInstalled }: { ready: boolean; onInstal
     <p>In Pangolin, open your <strong>Organization → API Keys → Create API Key</strong>. Give it a name such as “Home Assistant CA setup.” Check these eight permission boxes:</p>
     <ul className="permission-list">
       <li>Organization: <strong>Get Organization</strong></li>
-      <li>Site: <strong>List Sites</strong></li>
       <li>Domain: <strong>List Organization Domains</strong></li>
-      <li>Resource: <strong>List Resources</strong></li>
+      <li>Site: <strong>List Sites</strong></li>
       <li>Resource: <strong>Get Resource</strong></li>
-      <li>Resource Policy: <strong>Get Resource Policy</strong></li>
+      <li>Resource: <strong>List Resources</strong></li>
       <li>Target: <strong>List Targets</strong></li>
-      <li>Resource: <strong>Create Resource mTLS Certificate</strong></li>
+      <li>Resource Policy: <strong>Get Resource Policy</strong></li>
+      <li>Resource Policy: <strong>Update Resource Policy</strong></li>
     </ul>
-    <p>Create the key and copy it immediately; Pangolin shows it only once. Use an <strong>organization</strong> key, not a root key. Find the organization ID in Pangolin’s organization settings or dashboard URL.</p>
+    <p><strong>Update Resource Policy</strong> permits broader policy changes in Pangolin. This app uses it only to add the CA to the selected resource’s own inline policy. Create a temporary organization key, copy it immediately, and revoke it after setup. Find the organization ID in Pangolin’s organization settings or dashboard URL.</p>
     <p>For self-hosted Pangolin, enable the <a href="https://docs.pangolin.net/manage/integration-api" target="_blank" rel="noreferrer">integration API</a>. Enter its public HTTPS URL ending in <code>/v1</code> below. Create the CA in <a href="#certificate-title">Device certificates</a> below, then return here.</p>
     <form onSubmit={discover}>
       <label>Pangolin API URL<input type="url" value={apiUrl} onChange={event => { setApiUrl(event.target.value); setResult(null); }} required maxLength={300} placeholder="https://api.example.net/v1" autoComplete="url" disabled={busy || !ready} /></label>

@@ -8,6 +8,7 @@ import rateLimit from '@fastify/rate-limit';
 import { z } from 'zod';
 import type { Options } from './config.js';
 import { ExpiryReminders, type SendNotice } from './reminders.js';
+import type { ReminderPreference } from './reminder-preference.js';
 import { PkiService } from './pki.js';
 import { PkiError } from './openssl.js';
 import { apiUrlSchema, inspectPangolin, publicReader, publicWriter, PangolinError, type ReadJson, type WriteJson } from './pangolin.js';
@@ -38,6 +39,7 @@ export async function createApp(options: Options, settings: {
   onAccessDenied?: (code: string) => void;
   pki?: PkiService;
   notificationSender?: SendNotice;
+  reminderPreference?: ReminderPreference;
   pangolinReader?: (base: string, key: string, signal: AbortSignal) => Promise<ReadJson>;
   pangolinWriter?: (base: string, key: string, signal: AbortSignal) => Promise<WriteJson>;
 } = {}) {
@@ -176,6 +178,19 @@ export async function createApp(options: Options, settings: {
     pangolinConfigured: false,
     liveIngressVerified: false,
   }));
+
+  app.post('/api/reminders', async (request) => {
+    requirePki();
+    const input = z.strictObject({ enabled: z.boolean() }).safeParse(request.body);
+    request.body = undefined;
+    if (!input.success) throw new PkiError('INVALID_REMINDER_SETTING', 400);
+    if (!reminders || !settings.reminderPreference || (input.data.enabled && !settings.notificationSender))
+      throw new PkiError('REMINDERS_UNAVAILABLE', 503);
+    await settings.reminderPreference.setEnabled(input.data.enabled);
+    await reminders.configure(input.data.enabled ? settings.notificationSender : undefined);
+    options.enable_home_assistant_notifications = input.data.enabled;
+    return reminders.status();
+  });
 
   app.post('/api/authorization-check', { config: { rateLimit: { max: 10, timeWindow: 60_000 } } }, async (request, reply) => {
     if (!z.strictObject({}).safeParse(request.body).success) {

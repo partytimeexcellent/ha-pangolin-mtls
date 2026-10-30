@@ -21,7 +21,7 @@ const selection = { resourceIdentifier: 'test-resource', hostname: 'ha-test.exam
 const withWriteRoute = (fixture: ReturnType<typeof resourceFixture>) => async (path: string, auth: boolean) => {
   if (path !== '/openapi.json') return fixture.read(path, auth);
   const original = await fixture.read(path, auth) as { openapi: string; paths: Record<string, unknown> };
-  return { ...original, paths: { ...original.paths, '/public-resource/{resourceId}/mtls/certificate': { put: {} } } };
+  return { ...original, paths: { ...original.paths, '/public-resource-policy/{resourcePolicyId}/mtls/certificate': { put: {} } } };
 };
 
 test('CA upload is scoped, verified, and repeated selection does not upload twice', async () => {
@@ -30,7 +30,7 @@ test('CA upload is scoped, verified, and repeated selection does not upload twic
   const fixture = resourceFixture();
   let writes = 0;
   const write = async (path: string, body: unknown) => {
-    assert.equal(path, '/public-resource/7/mtls/certificate');
+    assert.equal(path, '/public-resource-policy/9/mtls/certificate');
     assert.deepEqual(body, { certificate: pem, name: 'HA Pangolin Access CA' });
     writes++;
     fixture.trust.certificates.push({ mtlsCertificateId: 1, name: 'HA Pangolin Access CA', fingerprint, notAfter: Date.now() + 100000 });

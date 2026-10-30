@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.0-dev.14
+
+- Correct the Pangolin 1.25.3 API-key instructions: the resource CA action is absent from its checkbox list. Use the visible Resource Policy → Update Resource Policy permission and the policy CA endpoint for a selected resource’s inline policy. Shared policies remain ineligible.
+- Advise a temporary organization key because Update Resource Policy permits broader policy changes.
+- Move expiry reminders into Device certificates. Store the choice in app data, import a retained Supervisor value, and apply changes without a restart. Keep Home Assistant URL override in Configuration because it is needed before the UI can start.
+
 ## 0.1.0-dev.13
 
 - Put Home Assistant URL, administrator selection and access check in one setup section; put API-key instructions, Pangolin API URL, Organization ID, resource discovery and CA installation in a second section. Completed setup sections collapse.

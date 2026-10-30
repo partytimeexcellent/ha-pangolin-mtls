@@ -6,6 +6,7 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createApp } from '../server/app.js';
 import { PkiService } from '../server/pki.js';
+import { ReminderPreference } from '../server/reminder-preference.js';
 import { checked } from '../web/pki-api.js';
 import { optionsSchema } from '../server/config.js';
 
@@ -62,6 +63,30 @@ test('certificate management is default-off even if a service exists', async (t)
   assert.equal((await app.inject({ url: '/api/pki', headers, remoteAddress })).statusCode, 503);
   assert.equal((await app.inject({ url: '/api/status', headers, remoteAddress })).json().signingEnabled, false);
   assert.equal(pki.authority(), null);
+});
+
+test('expiry reminders move to protected UI control and persist independently of old app options', async (t) => {
+  const root = await mkdtemp(join(tmpdir(), 'ha-reminder-setting-'));
+  const preferenceFile = join(root, 'reminders.json');
+  const preference = await ReminderPreference.open(preferenceFile, true);
+  const pki = await PkiService.open(root);
+  const app = await createApp({ admin_user_ids: [user], home_assistant_origin: origin,
+    enable_certificate_management: true, enable_home_assistant_notifications: preference.enabled() },
+    { pki, reminderPreference: preference, notificationSender: async () => {}, webRoot });
+  t.after(async () => { await app.close(); await rm(root, { recursive: true, force: true }); });
+  assert.equal((await app.inject({ url: '/api/pki', headers, remoteAddress })).json().reminders.enabled, true);
+  assert.equal((await app.inject({ method: 'POST', url: '/api/reminders', remoteAddress,
+    headers: { ...headers, origin }, payload: { enabled: false } })).statusCode, 403);
+  const session = (await app.inject({ url: '/api/session', remoteAddress, headers })).json();
+  const protectedHeaders = { ...headers, origin, 'x-access-session': session.sessionId, 'x-csrf-token': session.csrfToken };
+  const post = (enabled: boolean) => app.inject({ method: 'POST', url: '/api/reminders', remoteAddress,
+    headers: protectedHeaders, payload: { enabled } });
+  assert.equal((await post(false)).statusCode, 200);
+  assert.equal((await app.inject({ url: '/api/pki', headers, remoteAddress })).json().reminders.enabled, false);
+  assert.equal((await ReminderPreference.open(preferenceFile, true)).enabled(), false, 'saved UI choice overrides old Supervisor value');
+  assert.equal((await post(true)).statusCode, 200);
+  assert.equal((await app.inject({ url: '/api/pki', headers, remoteAddress })).json().reminders.enabled, true);
+  assert.equal((await ReminderPreference.open(preferenceFile, false)).enabled(), true);
 });
 
 test('certificate error rendering never echoes raw server data', async () => {

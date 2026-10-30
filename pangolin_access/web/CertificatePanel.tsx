@@ -82,6 +82,16 @@ export function CertificatePanel() {
       setMessage('Certificate authority created locally. Pangolin has not been changed.');
     });
   }
+  async function toggleReminders() {
+    if (!inventory) return;
+    const next = !inventory.reminders.enabled;
+    await action(async () => {
+      await protectedPost('./api/reminders', { enabled: next });
+      await refresh();
+      setMessage(next ? 'Expiry reminders are on. Home Assistant will show notices when a certificate reaches a reminder threshold.' :
+        'Expiry reminders are off. Existing Home Assistant notices remain until dismissed.');
+    });
+  }
   async function issue(event: FormEvent) {
     event.preventDefault();
     await action(async () => {
@@ -111,7 +121,7 @@ export function CertificatePanel() {
     {message && <p className="status-message" role="status" aria-live="polite">{message}</p>}
     {enabled && inventory && <>
       <div className="overview"><div><strong>{inventory.certificates.length}</strong><span>Certificates created</span></div><div><strong>{inventory.certificates.filter(cert => Date.parse(cert.expiresAt) - clock <= 30 * 86_400_000).length}</strong><span>Expiring soon or expired</span></div><div><strong>{inventory.reminders.enabled ? 'On' : 'Off'}</strong><span>Expiry reminders</span></div></div>
-      <details className="subdetails"><summary>Expiry reminder settings</summary><p>{inventory.reminders.enabled ? 'Reminders appear in the Home Assistant notification panel.' : 'Turn on Certificate expiry reminders in Configuration to receive reminders in Home Assistant.'} Checks run at startup and hourly while the app is running, at 30, 14, 7 and 1 day before expiry and when a certificate expires.</p></details>
+      <details className="subdetails"><summary>Expiry reminders</summary><p>Show notices in the Home Assistant notification panel at 30, 14, 7 and 1 day before expiry and after expiry. Checks run at startup and hourly while this app is running. Turning reminders on can send a notice for an already-expiring certificate.</p><button type="button" disabled={busy} onClick={toggleReminders}>{inventory.reminders.enabled ? 'Turn off reminders' : 'Turn on reminders'}</button></details>
       {inventory.reminders.deliveryFailed && <p role="alert">A reminder could not be delivered. The app will retry; review certificate dates here.</p>}
       {!inventory.authority ? <>
         <div className="empty-state"><h3>Create your certificate authority</h3><p>This is the trusted issuer for your device certificates. Create it once, then add its public certificate to Pangolin before testing remote access.</p><details className="subdetails"><summary>How the signing key is stored</summary><p>The signing key is encrypted, with its unlock secret stored on the same system. Protect your Home Assistant host and backups: access to both files can expose the key.</p></details>

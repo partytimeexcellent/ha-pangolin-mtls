@@ -5,12 +5,6 @@ configuration:
       Usually leave empty and set up access in the Web UI. For manual setup or recovery,
       add a trusted user's 32-character Home Assistant user ID here. These accounts retain
       access independently of the Web UI selection. Remove IDs you no longer trust.
-  enable_home_assistant_notifications:
-    name: Certificate expiry reminders
-    description: >-
-      Show reminders in Home Assistant before certificates expire. This app must be running.
-      Reminders appear in the notification
-      panel; phone push notifications are not included.
   home_assistant_origin:
     name: Home Assistant URL override (optional)
     description: >-

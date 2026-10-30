@@ -65,7 +65,8 @@ Source: [`server/routers/integration.ts`](https://github.com/fosrl/pangolin/blob
 | `GET /public-resource/{resourceId}/targets` | `listTargets` |
 | `GET /target/{targetId}` | `getTarget` |
 | `POST /target/{targetId}` | `updateTarget` |
-| `PUT /public-resource/{resourceId}/mtls/certificate` | `createResourceMtlsCertificate`; body `{certificate: publicPem, name?: label}` |
+| `PUT /public-resource/{resourceId}/mtls/certificate` | `createResourceMtlsCertificate`; this action is absent from the 1.25.3 API-key form |
+| `PUT /public-resource-policy/{resourcePolicyId}/mtls/certificate` | `updateResourcePolicy`; body `{certificate: publicPem, name?: label}`; used for a selected resource’s inline policy |
 | `GET /public-resource/{resourceId}/mtls/certificates` | `listResourceMtlsCertificates` |
 | `DELETE /public-resource/{resourceId}/mtls/certificate/{mtlsCertificateId}` | `deleteResourceMtlsCertificate`; response includes `mtlsDisabled` |
 

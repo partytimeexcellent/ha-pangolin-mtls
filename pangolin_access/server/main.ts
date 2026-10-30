@@ -4,14 +4,13 @@ import { startupOptionsSchema } from './config.js';
 import { resolveOptions, ExternalUrlError } from './resolve-options.js';
 import { createApp } from './app.js';
 import { homeAssistantNotifier } from './reminders.js';
+import { ReminderPreference } from './reminder-preference.js';
 import { PkiService } from './pki.js';
 
 process.umask(0o077);
 // Read Supervisor options before dropping privileges. No environment overrides or auth bypass.
 async function main() {
   const stored = startupOptionsSchema.parse(JSON.parse(await readFile('/data/options.json', 'utf8')));
-  // These are part of the app's normal setup, including upgrades with old disabled values.
-  const input = { ...stored, enable_administrator_setup: true, enable_certificate_management: true };
   const supervisorToken = process.env.SUPERVISOR_TOKEN;
   delete process.env.SUPERVISOR_TOKEN;
   await mkdir('/data/state', { recursive: true, mode: 0o700 });
@@ -24,15 +23,18 @@ async function main() {
     process.setgid!(1000);
     process.setuid!(1000);
   }
+  const reminderPreference = await ReminderPreference.open('/data/state/reminders.json', stored.enable_home_assistant_notifications);
+  // Migrate the former Supervisor reminder option on first start, then use app-owned state.
+  const input = { ...stored, enable_administrator_setup: true, enable_certificate_management: true,
+    enable_home_assistant_notifications: reminderPreference.enabled() };
   const { options, source } = await resolveOptions(input, supervisorToken);
-  const notificationToken = options.enable_home_assistant_notifications && options.enable_certificate_management ? supervisorToken : undefined;
-  if (options.enable_home_assistant_notifications && options.enable_certificate_management && !notificationToken) throw new Error('Notification credential unavailable.');
+  const notificationSender = supervisorToken ? homeAssistantNotifier(supervisorToken) : undefined;
+  if (reminderPreference.enabled() && !notificationSender) throw new Error('Notification credential unavailable.');
   const pki = options.enable_certificate_management ? await PkiService.open('/data/state') : undefined;
   const administrators = supervisorToken ? await Administrators.open('/data/state/administrators.json', coreUserDirectory(supervisorToken)) : undefined;
   const app = await createApp(options, {
     administrators,
-    pki, homeAssistantUrlSource: source,
-    notificationSender: notificationToken ? homeAssistantNotifier(notificationToken) : undefined,
+    pki, homeAssistantUrlSource: source, reminderPreference, notificationSender,
     onAccessDenied: (code) => process.stdout.write(JSON.stringify({ event: 'access_denied', code }) + '\n'),
   });
   let stopping = false;

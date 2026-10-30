@@ -121,7 +121,7 @@ const mtlsRoutes = [
   ['/public-resource/{resourceId}/policies', 'get'],
   ['/public-resource/{resourceId}/targets', 'get'],
   ['/public-resource-policy/{resourcePolicyId}/mtls/certificates', 'get'],
-  ['/public-resource/{resourceId}/mtls/certificate', 'put'],
+  ['/public-resource-policy/{resourcePolicyId}/mtls/certificate', 'put'],
 ] as const;
 
 export async function inspectPangolin(read: ReadJson, orgId: string) {

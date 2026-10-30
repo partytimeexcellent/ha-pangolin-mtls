@@ -37,6 +37,15 @@ export class ExpiryReminders {
     this.timer = setInterval(() => { void this.tick(); }, 60 * 60_000);
     this.timer.unref();
   }
+  async configure(send?: SendNotice) {
+    clearInterval(this.timer);
+    this.timer = undefined;
+    await this.running;
+    if (this.stopped) return;
+    this.send = send;
+    this.failed = false;
+    this.start();
+  }
   tick(): Promise<void> {
     if (this.stopped || !this.send) return Promise.resolve();
     if (this.running) return this.running;

@@ -17,7 +17,7 @@ export async function installCa(read: ReadJson, write: WriteJson, orgId: string,
   if (!ca.ca || Date.parse(ca.validTo) <= Date.now()) throw new PangolinError('CA_INVALID', 409, 'trust');
   const fingerprint = ca.fingerprint256;
   const spec = z.object({ paths: z.record(z.string(), z.record(z.string(), z.unknown())) }).parse(await read('/openapi.json', false));
-  if (!spec.paths['/public-resource/{resourceId}/mtls/certificate']?.put) throw new PangolinError('PANGOLIN_CONTRACT', 502, 'specification');
+  if (!spec.paths['/public-resource-policy/{resourcePolicyId}/mtls/certificate']?.put) throw new PangolinError('PANGOLIN_CONTRACT', 502, 'specification');
   const current = await inspectResource(read, orgId, selection);
   if (current.policy.source !== 'inline' || current.issues.some(issue =>
     ['RESOURCE_MODE', 'HTTPS_OFF', 'SHARED_POLICY', 'HOSTNAME_SEARCH_INCOMPLETE', 'HOSTNAME_CONFLICT'].includes(issue))) {
@@ -28,7 +28,9 @@ export async function installCa(read: ReadJson, write: WriteJson, orgId: string,
       hostname: current.resource.fullDomain };
   }
   if (current.trust.certificates.length >= 20) throw new PangolinError('PANGOLIN_TRUST_FULL', 409, 'trust');
-  const path = `/public-resource/${current.resource.resourceId}/mtls/certificate`;
+  // Pangolin 1.25.3 exposes the policy upload action in the API-key UI, unlike the resource upload action.
+  // Only the selected resource's inline policy is eligible; shared policies are rejected above.
+  const path = `/public-resource-policy/${current.policy.resourcePolicyId}/mtls/certificate`;
   try { await write(path, { certificate: pem, name: 'HA Pangolin Access CA' }); }
   catch (error) {
     if (error instanceof PangolinError && ['PANGOLIN_AUTH_FAILED', 'PANGOLIN_PERMISSION_DENIED', 'PANGOLIN_NOT_FOUND', 'PANGOLIN_REDIRECT'].includes(error.code))
@@ -38,7 +40,8 @@ export async function installCa(read: ReadJson, write: WriteJson, orgId: string,
   let after: Awaited<ReturnType<typeof inspectResource>>;
   try { after = await inspectResource(read, orgId, selection); }
   catch { throw new PangolinError('PANGOLIN_WRITE_UNCERTAIN', 502, 'trust'); }
-  if (after.policy.source !== 'inline' || after.resource.resourceId !== current.resource.resourceId ||
+  if (after.policy.source !== 'inline' || after.policy.resourcePolicyId !== current.policy.resourcePolicyId ||
+    after.resource.resourceId !== current.resource.resourceId ||
     !after.trust.certificates.some(cert => cert.fingerprint === fingerprint)) {
     throw new PangolinError('PANGOLIN_WRITE_UNCERTAIN', 502, 'trust');
   }
