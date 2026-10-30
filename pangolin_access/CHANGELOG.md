@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.0-dev.16
+
+- Restore the full Pangolin integration API URL field. For self-hosted Pangolin, derive the hostname from Traefik's `int-api-router` `Host(...)` rule and enter its HTTPS `/v1` URL; Cloud uses `https://api.pangolin.net/v1`.
+- Clarify the `config.yml` flag, redirect and HTTPS routers, integration service target and API URL verification in the UI and installation guides.
+
 ## 0.1.0-dev.15
 
 - Put self-hosted Integration API activation first in Pangolin setup, including the `config.yml` flag, Traefik hostname and listener port. Show the organization ID using the dashboard URL format.

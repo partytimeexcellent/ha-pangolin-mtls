@@ -1,6 +1,6 @@
 # Release readiness
 
-Updated October 30, 2026. Current working version: 0.1.0-dev.15, early access.
+Updated October 30, 2026. Current working version: 0.1.0-dev.16, early access.
 
 The daily interface now uses finished product language. That does not change the release status: a polished interface is one part of a production release. The [validation plan](validation-plan.md) defines the checks; [recorded results](phase-2-results.md) distinguishes local fixtures from actual HA/device/edge observations.
 
@@ -23,7 +23,7 @@ Phase 3 continues to require successful POC validation and owner review. Live in
 
 ## Interface organization
 
-- **Home Assistant setup** shows URL, administrator selection and access check, then collapses when complete. **Pangolin setup** starts with the Integration API instructions, uses a Cloud/Self-hosted choice to select the API URL, then shows exact API-key permissions, Organization ID, key, resources and CA installation; it collapses after installation.
+- **Home Assistant setup** shows URL, administrator selection and access check, then collapses when complete. **Pangolin setup** starts with the Integration API and Traefik routing instructions, then asks for the full API URL, exact API-key permissions, Organization ID and key before listing resources for CA installation; it collapses after installation.
 - **Device certificates** is the daily workspace: expiry overview, certificate cards, replacement and **Add a device**. Certificate authority details, reminder guidance and certificate identifiers expand on demand.
 - **Install on your device** appears after certificate creation, with a separately displayed password, one-use download and installation steps.
 

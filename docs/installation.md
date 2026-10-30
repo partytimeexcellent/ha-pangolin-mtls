@@ -26,7 +26,7 @@ Use these example addresses as a worksheet. Replace them with your environment's
 | --- | --- | --- |
 | HA management origin | `https://ha.example.net` | Where you open HA and this app to manage certificates |
 | Pangolin dashboard | `https://pangolin.example.net` | Where you manage resources and API keys |
-| Pangolin integration API | `https://api.pangolin.example.net` | Self-hosted API hostname used by this app; it adds `/v1` |
+| Pangolin integration API | `https://api.pangolin.example.net/v1` | Full self-hosted API URL used by this app; derive the hostname from the `int-api-router` rule |
 | New protected HA hostname | `ha-mtls.example.net` | Dedicated public hostname for the new mTLS resource |
 | Backend target | `192.168.10.20:8123` | HA address reachable **from the Pangolin site's connector** |
 
@@ -77,7 +77,7 @@ flags:
 
 Merge this into the existing `flags` section. The default integration port is `3003`; if you changed `server.integration_port`, use that port in the service definition below. Back up the configuration before editing and restart Pangolin using your deployment's normal procedure. For a standard Compose service named `pangolin`, `docker compose restart pangolin` reloads its configuration and may briefly interrupt service.
 
-Then route a public HTTPS API hostname to that listener. Pangolin Cloud needs no `config.yml` or Traefik changes; select **Pangolin Cloud** in the app and it uses `https://api.pangolin.net/v1` automatically.
+Then route a public HTTPS API hostname to that listener. Pangolin Cloud needs no `config.yml` or Traefik changes; enter `https://api.pangolin.net/v1` in the app.
 
 Skip the configuration changes if you already have a working integration endpoint and `openapi.json` loads.
 
@@ -90,7 +90,7 @@ Creating an API key in the dashboard does not itself expose the integration API.
 
 ### Route HTTPS to the listener
 
-Create a DNS record for `api.pangolin.example.net` pointing to the Pangolin edge. Then merge these entries into `config/traefik/dynamic_config.yml`:
+Create a DNS record for your chosen API hostname pointing to the Pangolin edge. Then merge these entries into `config/traefik/dynamic_config.yml`. In this example, the `Host` rule sets the API hostname to `api.pangolin.example.net`:
 
 ```yaml
 http:
@@ -138,7 +138,7 @@ https://api.pangolin.example.net/v1/docs/
 
 The base route should return a healthy response and `openapi.json` should return a large JSON API specification. A blank documentation page can be a Swagger asset/UI problem; if the JSON works, our app can proceed. `/api/v1/docs` on the dashboard hostname is not the integration documentation route. The final slash on `/docs/` is worth trying for relative assets, but is not a guaranteed fix for a blank page.
 
-In **Self-hosted** mode, enter the public HTTPS API hostname, such as `https://api.pangolin.example.net`. The app adds `/v1` and displays the final URL it will check. It also accepts a pasted `/v1` base and normalizes it. Do not enter the dashboard settings URL or append `/docs` or `/openapi.json`. The API hostname comes from the `Host(...)` rule on your `int-api-router`; it cannot be reliably inferred from your dashboard URL. If it returns 502, check that the Pangolin integration listener is enabled and that Traefik's `int-api-service` points to the correct Pangolin service and port. The app accepts public DNS destinations with valid HTTPS certificates. It rejects private/reserved addresses, mixed public/private DNS answers, redirects and custom URL path prefixes.
+Enter the **full** public HTTPS API URL in the app: take the hostname inside your `int-api-router` `Host(...)` rule, prefix it with `https://`, and append `/v1`. For the example above, enter `https://api.pangolin.example.net/v1`. The redirect router uses the same hostname for HTTP-to-HTTPS traffic. Do not use the dashboard URL unless your integration router actually uses that hostname, and do not append `/docs` or `/openapi.json` to the app field. The API hostname cannot be reliably inferred from your dashboard URL. If the specification URL returns 502, check that the Pangolin integration listener is enabled and Traefik's `int-api-service` points to the correct Pangolin service and port. The app accepts public DNS destinations with valid HTTPS certificates. It rejects private/reserved addresses, mixed public/private DNS answers, redirects and custom URL path prefixes.
 
 ## 4. Create one organization API key
 
@@ -161,7 +161,7 @@ Save the permissions. **Get Resource** and **Get Resource Policy** are separate.
 
 Find the organization ID in the organization's General settings or the first path component after the hostname in its dashboard URL. For example, in `https://pangolin.domain.com/organizationid/settings/api-keys`, the ID is **`organizationid`**. Use the ID, not the display name. [Pangolin's organization-ID guide](https://docs.pangolin.net/manage/organizations/org-id)
 
-Open **Pangolin setup** and choose **Self-hosted** or **Pangolin Cloud**. For self-hosted Pangolin, enter its public HTTPS integration API address (for example `https://api.pangolin.example.net`); the app appends `/v1`. For Cloud, the app uses `https://api.pangolin.net/v1`. Enter the Pangolin Organization ID and full API key, then select **Find public resources**. Do not add `Bearer`. The API URL is saved in this browser after a successful search. The key remains in page memory for setup actions and is not saved; close the page when finished.
+Open **Pangolin setup**. For self-hosted Pangolin, enter the full HTTPS integration API URL derived from your `int-api-router` hostname (for example `https://api.pangolin.example.net/v1`). For Cloud, enter `https://api.pangolin.net/v1`. Enter the Pangolin Organization ID and full API key, then select **Find public resources**. Do not add `Bearer`. The API URL is saved in this browser after a successful search. The key remains in page memory for setup actions and is not saved; close the page when finished.
 
 A pass confirms the scoped reads and expected response shapes. It does not prove target reachability or mTLS enforcement.
 

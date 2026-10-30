@@ -88,8 +88,6 @@ aside h3 { margin-top: 0; }
 .add-device > summary { color: var(--accent); }
 .add-device form { border: 0; margin-top: 0; }
 .pangolin-setup { margin-top: 0; }
-.pangolin-setup fieldset { display: flex; flex-wrap: wrap; gap: 4px 24px; padding-bottom: 12px; }
-.pangolin-setup fieldset label { margin: 4px 0; }
 .pangolin-setup pre { white-space: pre-wrap; background: var(--soft); border-radius: 8px; padding: 12px 16px; }
 .pangolin-setup code { overflow-wrap: anywhere; }
 .pangolin-setup form { margin-top: 16px; }

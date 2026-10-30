@@ -25,7 +25,7 @@ Applies to the certificate manager and Pangolin CA setup. Start with the [instal
 | Unclear whether `http://pangolin:3003` needs replacing | It is Traefik's internal backend. Keep it for a standard Compose service named `pangolin` on the same Docker network with integration port 3003. Use your deployment's service name/port if different. |
 | Dashboard API route already exists | Keep it. Add integration routers/services under the existing `http` maps. Different exact host rules can coexist; avoid duplicate YAML map keys. |
 | `PANGOLIN_ADDRESS_BLOCKED` | The app requires a public DNS endpoint; private/reserved or mixed DNS answers are rejected. Private integration endpoints are not supported by this build. |
-| `PANGOLIN_REDIRECT` | Enter the final HTTPS integration API hostname. The app adds `/v1`; redirects are refused rather than forwarding bearer credentials. |
+| `PANGOLIN_REDIRECT` | Enter the final HTTPS integration API URL ending in `/v1`; redirects are refused rather than forwarding bearer credentials. |
 | Authentication rejected | Use the full key Pangolin supplied, without adding `Bearer`. Confirm that it has not expired/been removed and is the intended organization key. |
 | Permission denied | Save the exact seven read grants in the tutorial and use the organization where the key was created. The failure label identifies which read failed. |
 | `Policies (Get Resource Policy)` denied | Enable **Resource Policy → Get Resource Policy**, separately from **Resource → Get Resource**. Save changes to the same key used in the form. |
