@@ -83,7 +83,8 @@ function requestPinnedJson(url: URL, pinned: { address: string; family: number }
       if (status !== 200 && status !== 201) {
         res.destroy();
         return fail(status === 401 ? 'PANGOLIN_AUTH_FAILED' : status === 403 ? 'PANGOLIN_PERMISSION_DENIED' :
-          status === 404 ? 'PANGOLIN_NOT_FOUND' : status && status >= 300 && status < 400 ? 'PANGOLIN_REDIRECT' : 'PANGOLIN_UPSTREAM');
+          status === 404 ? 'PANGOLIN_NOT_FOUND' : status && status >= 300 && status < 400 ? 'PANGOLIN_REDIRECT' :
+            status && [502, 503, 504].includes(status) ? 'PANGOLIN_GATEWAY' : 'PANGOLIN_UPSTREAM');
       }
       if (!/^application\/json(?:\s*;|$)/i.test(res.headers['content-type'] ?? '')) { res.destroy(); return fail('PANGOLIN_CONTRACT'); }
       const chunks: Buffer[] = [];

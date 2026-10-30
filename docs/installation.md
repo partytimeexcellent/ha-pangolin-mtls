@@ -26,7 +26,7 @@ Use these example addresses as a worksheet. Replace them with your environment's
 | --- | --- | --- |
 | HA management origin | `https://ha.example.net` | Where you open HA and this app to manage certificates |
 | Pangolin dashboard | `https://pangolin.example.net` | Where you manage resources and API keys |
-| Pangolin integration API | `https://api.pangolin.example.net/v1` | Separate API endpoint used by this app |
+| Pangolin integration API | `https://api.pangolin.example.net` | Self-hosted API hostname used by this app; it adds `/v1` |
 | New protected HA hostname | `ha-mtls.example.net` | Dedicated public hostname for the new mTLS resource |
 | Backend target | `192.168.10.20:8123` | HA address reachable **from the Pangolin site's connector** |
 
@@ -68,7 +68,16 @@ This is the address used to open the certificate app behind HA ingress, which ca
 
 ## 3. Enable Pangolin's integration API
 
-The app uses this API to list public resources and install the CA. Manual dashboard upload is an alternative if you choose not to enable the API.
+The app uses this API to list public resources and install the CA. [Pangolin's integration API setup](https://docs.pangolin.net/self-host/advanced/integration-api) is the upstream reference. For self-hosted Pangolin, the **first step** is enabling the listener in `config.yml`:
+
+```yaml
+flags:
+  enable_integration_api: true
+```
+
+Merge this into the existing `flags` section. The default integration port is `3003`; if you changed `server.integration_port`, use that port in the service definition below. Back up the configuration before editing and restart Pangolin using your deployment's normal procedure. For a standard Compose service named `pangolin`, `docker compose restart pangolin` reloads its configuration and may briefly interrupt service.
+
+Then route a public HTTPS API hostname to that listener. Pangolin Cloud needs no `config.yml` or Traefik changes; select **Pangolin Cloud** in the app and it uses `https://api.pangolin.net/v1` automatically.
 
 Skip the configuration changes if you already have a working integration endpoint and `openapi.json` loads.
 
@@ -78,17 +87,6 @@ Creating an API key in the dashboard does not itself expose the integration API.
 | --- | --- | --- |
 | Dashboard API | `pangolin.example.net/api/v1` | Pangolin's own web dashboard |
 | Integration API | `api.pangolin.example.net/v1` | External tools using bearer API keys |
-
-### Enable the listener
-
-On the Pangolin server, edit `config/config.yml`. Merge this setting into its existing `flags` section:
-
-```yaml
-flags:
-  enable_integration_api: true
-```
-
-The default integration port is `3003`. If you changed `server.integration_port`, use that port in the service definition below. Back up the configuration before editing and reload/restart Pangolin using your deployment's normal procedure. For a standard Compose service named `pangolin`, `docker compose restart pangolin` reloads its configuration; this may briefly interrupt service, so retain server-console access.
 
 ### Route HTTPS to the listener
 
@@ -126,7 +124,7 @@ Keep the existing `api-router`/`api-service` for the dashboard. These example ro
 
 `http://pangolin:3003` is an **internal Docker address**, not your public domain. It is correct when the Compose service is named `pangolin`, Traefik shares its network, and the integration port is `3003`. Change only the service name/port if your deployment differs. Public clients use HTTPS through Traefik; you do not need to publish port 3003 to the internet.
 
-Traefik commonly watches its dynamic file. Check its reload/log behavior after editing; follow your deployment's reload procedure if file watching is not active. See [Pangolin's integration API setup](https://docs.pangolin.net/self-host/advanced/integration-api) for the upstream reference.
+Traefik commonly watches its dynamic file. Check its reload/log behavior after editing; follow your deployment's reload procedure if file watching is not active.
 
 ### Verify the URL
 
@@ -140,7 +138,7 @@ https://api.pangolin.example.net/v1/docs/
 
 The base route should return a healthy response and `openapi.json` should return a large JSON API specification. A blank documentation page can be a Swagger asset/UI problem; if the JSON works, our app can proceed. `/api/v1/docs` on the dashboard hostname is not the integration documentation route. The final slash on `/docs/` is worth trying for relative assets, but is not a guaranteed fix for a blank page.
 
-The value to enter in our app is exactly the HTTPS base ending in **`/v1`**, without `/docs` or `/openapi.json`. The app accepts public DNS destinations with valid HTTPS certificates. It rejects private/reserved addresses, mixed public/private DNS answers, redirects and custom URL path prefixes.
+In **Self-hosted** mode, enter the public HTTPS API hostname, such as `https://api.pangolin.example.net`. The app adds `/v1` and displays the final URL it will check. It also accepts a pasted `/v1` base and normalizes it. Do not enter the dashboard settings URL or append `/docs` or `/openapi.json`. The API hostname comes from the `Host(...)` rule on your `int-api-router`; it cannot be reliably inferred from your dashboard URL. If it returns 502, check that the Pangolin integration listener is enabled and that Traefik's `int-api-service` points to the correct Pangolin service and port. The app accepts public DNS destinations with valid HTTPS certificates. It rejects private/reserved addresses, mixed public/private DNS answers, redirects and custom URL path prefixes.
 
 ## 4. Create one organization API key
 
@@ -161,9 +159,9 @@ Create the key within the organization containing your new resource. Enable all 
 
 Save the permissions. **Get Resource** and **Get Resource Policy** are separate. The CA upload uses **Update Resource Policy** on the selected resource’s own inline policy. The resource-specific create-certificate action is absent from Pangolin 1.25.3’s API-key form, even though its API route exists. Update Resource Policy grants broader policy changes, so use a temporary organization key and revoke it after setup. No root key, organization-listing grant, update-resource grant or delete grant is needed.
 
-Find the organization ID in the organization's General settings or the first path component in its dashboard URL. For example, `https://pangolin.example.net/home-lab/settings/sites` means organization ID `home-lab`. Use the ID, not the display name. [Pangolin's organization-ID guide](https://docs.pangolin.net/manage/organizations/org-id)
+Find the organization ID in the organization's General settings or the first path component after the hostname in its dashboard URL. For example, in `https://pangolin.domain.com/organizationid/settings/api-keys`, the ID is **`organizationid`**. Use the ID, not the display name. [Pangolin's organization-ID guide](https://docs.pangolin.net/manage/organizations/org-id)
 
-Open **Pangolin setup**. Enter the public HTTPS API URL ending in `/v1` (for example `https://api.pangolin.example.net/v1`), the Pangolin Organization ID and full API key, then select **Find public resources**. Do not add `Bearer`. The API URL is saved in this browser after a successful search. The key remains in page memory for setup actions and is not saved; close the page when finished.
+Open **Pangolin setup** and choose **Self-hosted** or **Pangolin Cloud**. For self-hosted Pangolin, enter its public HTTPS integration API address (for example `https://api.pangolin.example.net`); the app appends `/v1`. For Cloud, the app uses `https://api.pangolin.net/v1`. Enter the Pangolin Organization ID and full API key, then select **Find public resources**. Do not add `Bearer`. The API URL is saved in this browser after a successful search. The key remains in page memory for setup actions and is not saved; close the page when finished.
 
 A pass confirms the scoped reads and expected response shapes. It does not prove target reachability or mTLS enforcement.
 

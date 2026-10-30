@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.0-dev.15
+
+- Put self-hosted Integration API activation first in Pangolin setup, including the `config.yml` flag, Traefik hostname and listener port. Show the organization ID using the dashboard URL format.
+- Choose Pangolin Cloud or Self-hosted in the app. Cloud uses its fixed API base; self-hosted accepts the public API hostname and adds `/v1`. Display the final URL before probing it.
+- Report upstream 502/503/504 from the integration API as a distinct gateway error with routing guidance. Update the installation and troubleshooting guides.
+
 ## 0.1.0-dev.14
 
 - Correct the Pangolin 1.25.3 API-key instructions: the resource CA action is absent from its checkbox list. Use the visible Resource Policy → Update Resource Policy permission and the policy CA endpoint for a selected resource’s inline policy. Shared policies remain ineligible.

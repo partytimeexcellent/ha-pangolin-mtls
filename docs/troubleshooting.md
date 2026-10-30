@@ -20,16 +20,17 @@ Applies to the certificate manager and Pangolin CA setup. Start with the [instal
 | `/api/v1/docs` returns 404 | This is the dashboard API path. Use the separately routed integration hostname with `/v1/docs/`. |
 | `/v1/docs` also returns 404 on the dashboard host | Find `int-api-router` in Traefik's dynamic config. Its `Host(...)` identifies the integration hostname. If absent, follow the tutorial's API setup. |
 | A key exists but the API does not respond | Enable `flags.enable_integration_api`, load Pangolin's config, route the integration listener through HTTPS and configure DNS. Key creation alone does not expose the API. |
+| `PANGOLIN_GATEWAY` during API specification check | The public integration API hostname returned 502, 503 or 504. On self-hosted Pangolin, check `flags.enable_integration_api: true` in `config.yml`, restart Pangolin, and confirm the Traefik `int-api-router` hostname and `int-api-service` target (default `http://pangolin:3003`). Open `https://YOUR_API_HOST/v1/openapi.json`; it must return JSON. The dashboard hostname may be different. |
 | `/v1` is healthy but docs are white | Try `/v1/docs/`, then `/v1/openapi.json`. A functioning JSON specification is sufficient for this app; the Swagger UI can be investigated separately. |
 | Unclear whether `http://pangolin:3003` needs replacing | It is Traefik's internal backend. Keep it for a standard Compose service named `pangolin` on the same Docker network with integration port 3003. Use your deployment's service name/port if different. |
 | Dashboard API route already exists | Keep it. Add integration routers/services under the existing `http` maps. Different exact host rules can coexist; avoid duplicate YAML map keys. |
 | `PANGOLIN_ADDRESS_BLOCKED` | The app requires a public DNS endpoint; private/reserved or mixed DNS answers are rejected. Private integration endpoints are not supported by this build. |
-| `PANGOLIN_REDIRECT` | Enter the final HTTPS integration base ending in `/v1`. Redirects are refused rather than forwarding bearer credentials. |
+| `PANGOLIN_REDIRECT` | Enter the final HTTPS integration API hostname. The app adds `/v1`; redirects are refused rather than forwarding bearer credentials. |
 | Authentication rejected | Use the full key Pangolin supplied, without adding `Bearer`. Confirm that it has not expired/been removed and is the intended organization key. |
 | Permission denied | Save the exact seven read grants in the tutorial and use the organization where the key was created. The failure label identifies which read failed. |
 | `Policies (Get Resource Policy)` denied | Enable **Resource Policy → Get Resource Policy**, separately from **Resource → Get Resource**. Save changes to the same key used in the form. |
-| Organization ID unclear | Read it from General settings or the first dashboard URL path component. It is separate from the organization display name. |
-| Error ends in HTTP 502 | For `PANGOLIN_PERMISSION_DENIED`, the app wraps an upstream 403 as a local 502. It does not mean your HA backend returned 502. Read the fixed code and operation label. |
+| Organization ID unclear | Read it from General settings or the first dashboard URL path component. In `https://pangolin.domain.com/organizationid/settings/api-keys`, enter `organizationid`, not the display name. |
+| Error ends in HTTP 502 | The app reports Pangolin connection failures as local HTTP 502. Read the fixed code and operation label; `PANGOLIN_GATEWAY` specifically means the integration API hostname returned 502, 503 or 504. A permission failure uses `PANGOLIN_PERMISSION_DENIED` even though its local HTTP status is also 502. |
 
 Keys are request-scoped and cleared after submission. Reenter the key for another check; the app intentionally does not remember it.
 

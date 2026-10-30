@@ -126,7 +126,7 @@ test('pinned HTTPS reader sends only GET, keeps TLS verification and refuses red
   }
   const pin = { address: '8.8.8.8', family: 4 };
   assert.deepEqual(await readPinnedJson(url, pin, 'fixture-key', false, signal, sendFixture(200, '{"ok":true}', false)), { ok: true });
-  for (const [status, code] of [[301, 'PANGOLIN_REDIRECT'], [401, 'PANGOLIN_AUTH_FAILED'], [403, 'PANGOLIN_PERMISSION_DENIED'], [404, 'PANGOLIN_NOT_FOUND'], [500, 'PANGOLIN_UPSTREAM']] as const) {
+  for (const [status, code] of [[301, 'PANGOLIN_REDIRECT'], [401, 'PANGOLIN_AUTH_FAILED'], [403, 'PANGOLIN_PERMISSION_DENIED'], [404, 'PANGOLIN_NOT_FOUND'], [500, 'PANGOLIN_UPSTREAM'], [502, 'PANGOLIN_GATEWAY'], [503, 'PANGOLIN_GATEWAY'], [504, 'PANGOLIN_GATEWAY']] as const) {
     await assert.rejects(readPinnedJson(url, pin, 'fixture-key', true, signal, sendFixture(status, 'private-secret', true)), new RegExp(code));
   }
   await assert.rejects(readPinnedJson(url, pin, 'fixture-key', false, signal, sendFixture(200, 'private-secret', false)), /PANGOLIN_CONTRACT/);

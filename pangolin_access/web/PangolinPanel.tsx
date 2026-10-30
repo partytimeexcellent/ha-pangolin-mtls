@@ -7,10 +7,23 @@ const resultSchema = z.object({ checkedAt: z.string(), organization: z.object({ 
   resources: z.object({ resources: z.array(resourceSchema), pagination: z.object({ total: z.number() }) }) });
 type Resource = z.infer<typeof resourceSchema>;
 const safeError = (error: unknown, fallback: string) => error instanceof Error && /\([A-Z_]+, HTTP \d+\)$/.test(error.message) ? error.message : fallback;
+const cloudApiUrl = 'https://api.pangolin.net/v1';
 function savedApiUrl() { try { return localStorage.getItem('ha-pangolin-api-url') ?? ''; } catch { return ''; } }
+function savedDeployment(): 'cloud' | 'self-hosted' { return savedApiUrl() === cloudApiUrl ? 'cloud' : 'self-hosted'; }
+function savedApiOrigin() { try { const saved = savedApiUrl(); return saved === cloudApiUrl ? '' : new URL(saved).origin; } catch { return ''; } }
+function selfHostedApiUrl(value: string) {
+  try {
+    const url = new URL(value);
+    if (url.protocol !== 'https:' || url.username || url.password || url.search || url.hash ||
+      !['/', '/v1', '/v1/'].includes(url.pathname)) return null;
+    return `${url.origin}/v1`;
+  } catch { return null; }
+}
 
 export function PangolinPanel({ ready, onInstalled }: { ready: boolean; onInstalled: () => void }) {
-  const [apiUrl, setApiUrl] = useState(savedApiUrl);
+  const [deployment, setDeployment] = useState<'cloud' | 'self-hosted'>(savedDeployment);
+  const [apiOrigin, setApiOrigin] = useState(savedApiOrigin);
+  const apiUrl = deployment === 'cloud' ? cloudApiUrl : selfHostedApiUrl(apiOrigin);
   const [orgId, setOrgId] = useState('');
   const [key, setKey] = useState('');
   const [busy, setBusy] = useState(false);
@@ -20,6 +33,7 @@ export function PangolinPanel({ ready, onInstalled }: { ready: boolean; onInstal
   async function discover(event: FormEvent) {
     event.preventDefault(); setBusy(true); setResult(null); setInstalled({}); setMessage('Finding public resources…');
     try {
+      if (!apiUrl) { setMessage('Enter the HTTPS integration API hostname, without a dashboard path. The app adds /v1.'); return; }
       const response = await protectedPost('./api/pangolin/check', { orgId, apiKey: key, apiUrl });
       const data = resultSchema.parse(await response.json());
       try { localStorage.setItem('ha-pangolin-api-url', apiUrl); } catch { /* URL can be reentered. */ }
@@ -29,7 +43,7 @@ export function PangolinPanel({ ready, onInstalled }: { ready: boolean; onInstal
     finally { setBusy(false); }
   }
   async function install(resource: Resource) {
-    if (!resource.fullDomain) return;
+    if (!resource.fullDomain || !apiUrl) return;
     setBusy(true); setMessage(`Checking ${resource.fullDomain} and installing the public CA…`);
     try {
       const response = await protectedPost('./api/pangolin/install-ca', {
@@ -45,7 +59,16 @@ export function PangolinPanel({ ready, onInstalled }: { ready: boolean; onInstal
     } finally { setBusy(false); }
   }
   return <div className="pangolin-setup">
-    <p>In Pangolin, open your <strong>Organization → API Keys → Create API Key</strong>. Give it a name such as “Home Assistant CA setup.” Check these eight permission boxes:</p>
+    <fieldset disabled={busy || !ready}><legend>Pangolin deployment</legend>
+      <label className="check"><input type="radio" name="pangolin-deployment" checked={deployment === 'self-hosted'} onChange={() => { setDeployment('self-hosted'); setResult(null); }} /> Self-hosted</label>
+      <label className="check"><input type="radio" name="pangolin-deployment" checked={deployment === 'cloud'} onChange={() => { setDeployment('cloud'); setResult(null); }} /> Pangolin Cloud</label>
+    </fieldset>
+    {deployment === 'self-hosted' ? <>
+      <p><a href="https://docs.pangolin.net/self-host/advanced/integration-api" target="_blank" rel="noreferrer">Enable the Pangolin integration API</a> first. In Pangolin’s <code>config.yml</code> (often <code>config/config.yml</code>), add or set:</p>
+      <pre><code>{'flags:\n  enable_integration_api: true'}</code></pre>
+      <p>Restart Pangolin. Route a public HTTPS API hostname through Traefik to Pangolin’s integration listener (default port <code>3003</code>). The hostname is the one in your Traefik <code>int-api-router</code> rule, often <code>api.your-domain.com</code>. It may differ from the dashboard hostname.</p>
+    </> : <p>Pangolin Cloud uses <code>{cloudApiUrl}</code> automatically. No self-hosted <code>config.yml</code> or Traefik setup is needed.</p>}
+    <p>In Pangolin, open <strong>Organization → API Keys → Create API Key</strong>. Give the organization key a name such as “Home Assistant CA setup.” Check these eight permission boxes:</p>
     <ul className="permission-list">
       <li>Organization: <strong>Get Organization</strong></li>
       <li>Domain: <strong>List Organization Domains</strong></li>
@@ -56,10 +79,13 @@ export function PangolinPanel({ ready, onInstalled }: { ready: boolean; onInstal
       <li>Resource Policy: <strong>Get Resource Policy</strong></li>
       <li>Resource Policy: <strong>Update Resource Policy</strong></li>
     </ul>
-    <p><strong>Update Resource Policy</strong> permits broader policy changes in Pangolin. This app uses it only to add the CA to the selected resource’s own inline policy. Create a temporary organization key, copy it immediately, and revoke it after setup. Find the organization ID in Pangolin’s organization settings or dashboard URL.</p>
-    <p>For self-hosted Pangolin, enable the <a href="https://docs.pangolin.net/manage/integration-api" target="_blank" rel="noreferrer">integration API</a>. Enter its public HTTPS URL ending in <code>/v1</code> below. Create the CA in <a href="#certificate-title">Device certificates</a> below, then return here.</p>
+    <p><strong>Update Resource Policy</strong> permits broader policy changes in Pangolin. This app uses it only to add the CA to the selected resource’s own inline policy. Create a temporary organization key, copy it immediately, and revoke it after setup.</p>
+    <p>Find the <strong>Pangolin Organization ID</strong> in the dashboard URL: in <code>https://pangolin.domain.com/organizationid/settings/api-keys</code>, enter <code>organizationid</code>. It is the first path segment after the hostname, not the organization display name.</p>
+    <p>Create the CA in <a href="#certificate-title">Device certificates</a> below, then return here.</p>
     <form onSubmit={discover}>
-      <label>Pangolin API URL<input type="url" value={apiUrl} onChange={event => { setApiUrl(event.target.value); setResult(null); }} required maxLength={300} placeholder="https://api.example.net/v1" autoComplete="url" disabled={busy || !ready} /></label>
+      {deployment === 'self-hosted' && <label>Pangolin integration API address<input type="url" value={apiOrigin} onChange={event => { setApiOrigin(event.target.value); setResult(null); }} required maxLength={300} placeholder="https://api.your-domain.com" autoComplete="url" disabled={busy || !ready} /></label>}
+      <p>API URL this app will check: <code>{apiUrl ?? 'Enter the API address above'}</code></p>
+      {apiUrl && <p>Verify that <a href={`${apiUrl}/openapi.json`} target="_blank" rel="noreferrer"><code>{apiUrl}/openapi.json</code></a> returns JSON before continuing.</p>}
       <label>Pangolin Organization ID<input value={orgId} onChange={event => { setOrgId(event.target.value); setResult(null); }} required maxLength={100} pattern="[A-Za-z0-9_-]+" autoComplete="off" disabled={busy || !ready} /></label>
       <label>Pangolin API key<input type="password" value={key} onChange={event => { setKey(event.target.value); setResult(null); }} required maxLength={1024} autoComplete="off" spellCheck={false} disabled={busy || !ready} /></label>
       <button disabled={busy || !ready}>{busy ? 'Working…' : 'Find public resources'}</button>
