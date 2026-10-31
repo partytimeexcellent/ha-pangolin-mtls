@@ -2,7 +2,7 @@
 
 A Home Assistant Supervisor app for managing device certificates and remote access through Pangolin mTLS.
 
-**Status: Early access, October 30, 2026.** Version `0.1.0-dev.17` adds `/v1` to the entered Pangolin integration API address, shows CA installation results beside each resource, and can enable mTLS on a disabled resource after verifying its CA trust. See [release readiness](docs/release-readiness.md) for the remaining production-release gates. Certificate creation is available after verified administrator setup and an HTTPS Home Assistant URL are configured. No prebuilt image or production release has been published.
+**Status: Early access, October 30, 2026.** Version `0.1.0-dev.18` adds collapsed iPhone/iPad, Mac, Windows and Android installation guides in the app. The device type controls the download: iPhone/iPad receive a ZIP containing the Companion identity and Safari profile; other devices receive the `.p12` directly. See [release readiness](docs/release-readiness.md) for the remaining production-release gates. Certificate creation is available after verified administrator setup and an HTTPS Home Assistant URL are configured. No prebuilt image or production release has been published.
 
 The source, lockfile, app manifest and Dockerfile are in [pangolin_access](pangolin_access/README.md). Native amd64/aarch64 container builds and runtime checks passed on GitHub Actions. Selected HA ingress and initial iOS Companion checks passed as owner-reported results; broader compatibility remains unverified. See [local development](docs/development.md) and [prototype validation results](docs/phase-2-results.md).
 
@@ -46,6 +46,7 @@ Read [ARCHITECTURE.md](ARCHITECTURE.md), [SECURITY.md](SECURITY.md), [research e
 - [Installation](docs/installation.md)
 - [Short Pangolin connection-check routine](docs/pangolin-connection-check.md)
 - [iOS and iPadOS enrollment](docs/ios-enrollment.md)
+- [Device installation: iPhone/iPad, Mac, Windows and Android](docs/device-installation.md)
 - [macOS enrollment](docs/macos-enrollment.md)
 - [Certificate management](docs/certificate-management.md)
 - [Troubleshooting](docs/troubleshooting.md)

@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.0-dev.18
+
+- Replace the generic Safari installer heading with four collapsed device guides in the certificate panel. Add concrete iPhone/iPad, macOS, Windows and Android import and verification steps.
+- Combine iPhone and iPad into one device choice. Add Windows and Android choices. Show only the ZIP download for iPhone/iPad and only the direct `.p12` download for other device types.
+- Name the Apple mobile ZIP `iPhone or iPad certificate package.zip` and clarify that its Safari profile is optional and only for iPhone/iPad. Update the installation and replacement guides.
+
 ## 0.1.0-dev.17
 
 - Accept the Pangolin integration API address from its Traefik `Host(...)` rule and add `/v1` automatically. Existing saved `/v1` URLs are shown as the base address without doubling the suffix.

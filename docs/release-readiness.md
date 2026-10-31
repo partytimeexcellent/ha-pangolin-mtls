@@ -1,6 +1,6 @@
 # Release readiness
 
-Updated October 30, 2026. Current working version: 0.1.0-dev.17, early access.
+Updated October 30, 2026. Current working version: 0.1.0-dev.18, early access.
 
 The daily interface now uses finished product language. That does not change the release status: a polished interface is one part of a production release. The [validation plan](validation-plan.md) defines the checks; [recorded results](phase-2-results.md) distinguishes local fixtures from actual HA/device/edge observations.
 

@@ -59,6 +59,12 @@ aside { border: 1px solid #8fbacd; background: var(--soft); border-radius: 14px;
 aside h3 { margin-top: 0; }
 .install-steps { padding-left: 22px; }
 .install-steps li { margin: 8px 0; }
+.install-guides { margin-top: 18px; }
+.install-guide { border: 1px solid var(--line); border-radius: 10px; background: var(--surface); padding: 0 14px; margin: 8px 0; }
+.install-guide[open] { padding-bottom: 12px; }
+.install-guide ol { padding-left: 24px; margin: 4px 0 12px; }
+.install-guide li { margin: 10px 0; }
+.install-guide p { font-size: .9rem; }
 .certificate-list { display: grid; gap: 14px; margin: 18px 0; }
 .certificate-card { border: 1px solid var(--line); border-radius: 12px; padding: 20px; min-width: 0; }
 .certificate-card h4, .check span { overflow-wrap: anywhere; }

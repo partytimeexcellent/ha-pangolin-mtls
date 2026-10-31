@@ -172,7 +172,7 @@ export class PkiService {
       if ((this.db.prepare('SELECT count(*) AS count FROM certificates').get()!.count as number) >= 100) throw new PkiError('INVENTORY_CAPACITY');
       if (!Number.isInteger(input.lifetimeDays) || input.lifetimeDays < 1 || input.lifetimeDays > 365 ||
         input.name.trim().length < 1 || input.name.length > 80 || /[\x00-\x1f\x7f]/.test(input.name) ||
-        !['ios', 'ipados', 'macos', 'other'].includes(input.platform)) throw new PkiError('INVALID_CERTIFICATE_INPUT', 400);
+        !['ios', 'ipados', 'macos', 'windows', 'android', 'other'].includes(input.platform)) throw new PkiError('INVALID_CERTIFICATE_INPUT', 400);
       if (input.replacesId && !this.inventory().some((item) => item.id === input.replacesId)) throw new PkiError('REPLACEMENT_INVALID', 400);
       const authority = this.authorityRow();
       if (!authority) throw new PkiError('CA_REQUIRED');

@@ -1,6 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { z } from 'zod';
 import { checked, protectedPost } from './pki-api';
+import { DeviceInstallGuides } from './DeviceInstallGuides';
 
 const authoritySchema = z.object({ fingerprint: z.string(), serial: z.string(), issuedAt: z.string(), expiresAt: z.string() });
 const certificateSchema = z.object({ id: z.string().uuid(), name: z.string(), platform: z.string(), serial: z.string(), fingerprint: z.string(), issuedAt: z.string(), expiresAt: z.string(), exportStatus: z.string(), replacesId: z.string().uuid().nullable(), replacementConfirmedAt: z.string().nullable() });
@@ -30,7 +31,7 @@ export function CertificatePanel() {
     return days <= 0 ? 'Expired' : `${days} day${days === 1 ? '' : 's'} left${days <= 30 ? ' — replacement due' : ''}`;
   }
   function replace(cert: z.infer<typeof certificateSchema>) {
-    setAdding(true); setReplacing(cert); setName(cert.name); setPlatform(cert.platform); setDays(90);
+    setAdding(true); setReplacing(cert); setName(cert.name); setPlatform(cert.platform === 'ipados' ? 'ios' : cert.platform); setDays(90);
     setMessage('Create a replacement, install it on your device, then test access and confirm below.');
     document.getElementById('device-form')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
@@ -112,7 +113,9 @@ export function CertificatePanel() {
       document.body.append(anchor); anchor.click(); anchor.remove();
       setTimeout(() => URL.revokeObjectURL(url), 60_000);
       setDownloaded(true); await refresh();
-      setMessage(format === 'mobileconfig' ? 'Safari profile delivered once. Complete installation in iOS Settings using the separate package password. Delivery does not prove installation.' : 'Package delivered once. Import the .p12 into Companion; the ZIP also contains the named Safari profile. Use the separate password. Delivery does not prove installation.');
+      setMessage(format === 'mobileconfig' ? 'Safari profile downloaded once. Complete installation in iPhone or iPad Settings using the separate package password.' :
+        format === 'zip' ? 'Certificate package downloaded once. Extract it in Files and follow the iPhone or iPad instructions below.' :
+          'Certificate downloaded once. Follow the instructions for your device below to import the .p12.');
     });
   }
   return <section aria-labelledby="certificate-title">
@@ -138,7 +141,7 @@ export function CertificatePanel() {
           {replacing && <><p>The old certificate will remain valid. Install the replacement and test a new connection before confirming it below.</p><button type="button" disabled={busy} onClick={() => setReplacing(null)}>Cancel replacement</button></>}
           <label>Device name<input placeholder="e.g. Alex’s iPhone" value={name} onChange={(e) => setName(e.target.value)} required maxLength={80} autoComplete="off" /></label>
           <div className="form-grid"><label>Device type<select value={platform} onChange={(e) => setPlatform(e.target.value)}>
-            <option value="ios">iOS</option><option value="ipados">iPadOS</option><option value="macos">macOS</option><option value="other">Other</option>
+            <option value="ios">iPhone or iPad</option><option value="macos">Mac</option><option value="windows">Windows PC</option><option value="android">Android phone or tablet</option><option value="other">Other device</option>
           </select></label>
           <label>Valid for (days)<input type="number" value={days} onChange={(e) => setDays(e.target.valueAsNumber)} min={1} max={365} required /></label></div>
           <button disabled={busy || Boolean(bundle && !downloaded)} type="submit">{replacing ? 'Create replacement' : 'Create device certificate'}</button>
@@ -146,20 +149,19 @@ export function CertificatePanel() {
       </>}
       {bundle && <aside>
         <h3>Install on your device</h3>
-        <p>Safari installer: {bundle.profileDisplayName}</p>
-        <p>Download available until {new Date(bundle.expiresAt).toLocaleTimeString()}. Save the password separately before downloading.</p>
+        <p>Save this certificate’s password separately. The download expires at {new Date(bundle.expiresAt).toLocaleTimeString()} and can be used once. Download on the intended device, or transfer the file there securely.</p>
         <button onClick={() => setShowPassword(!showPassword)}>{showPassword ? 'Hide password' : 'Show package password'}</button>
         {showPassword && <p className="fingerprint"><code>{bundle.password}</code></p>}
-        {!['ios', 'ipados'].includes(bundle.certificate.platform) && <button onClick={() => download('p12')} disabled={busy || downloaded}>Download certificate (.p12)</button>}
-        <button onClick={() => download('zip')} disabled={busy || downloaded}>{downloaded ? 'Installer downloaded' : 'Download installer (.zip)'}</button>
-        <ol className="install-steps"><li>Save the password somewhere safe.</li><li>Download and extract the installer ZIP.</li><li>For Companion, import <strong>Home Assistant identity.p12</strong> inside the app. For Safari on iPhone or iPad, open <strong>Install for Safari.mobileconfig</strong> and finish installation in Settings.</li></ol><p>Install only the file for the app you use. Downloading does not confirm installation.</p>
-        <details className="subdetails"><summary>About the Safari installer</summary><p>The profile contains the encrypted certificate and key, without its password. It does not enroll your device in management or change root trust. iOS may show Not Signed or Unverified because the profile is unsigned. Check its name and contents before installing. Safari profile installation has not yet been validated on a real device.</p></details>
-        <p>Restarting the app or leaving this page can make a pending package unrecoverable. No reusable download link is created.</p>
+        {['ios', 'ipados'].includes(bundle.certificate.platform) ?
+          <button onClick={() => download('zip')} disabled={busy || downloaded}>{downloaded ? 'Certificate package downloaded' : 'Download certificate package (.zip)'}</button> :
+          <button onClick={() => download('p12')} disabled={busy || downloaded}>{downloaded ? 'Certificate downloaded' : 'Download certificate (.p12)'}</button>}
+        <DeviceInstallGuides profileDisplayName={bundle.profileDisplayName} />
+        <p>Downloading a file does not install the certificate. Restarting the app or leaving this page can make an unused download unavailable.</p>
       </aside>}
       {inventory.certificates.length > 0 && <>
         <h3>Your certificates</h3>
-        <div className="certificate-list">{inventory.certificates.map((cert) => <article className="certificate-card" key={cert.id}><div className="section-heading"><div><h4>{cert.name}</h4><p className="muted">{({ ios: 'iPhone', ipados: 'iPad', macos: 'Mac', other: 'Other device' } as Record<string, string>)[cert.platform] ?? cert.platform}</p></div><span className="badge">{expiry(cert.expiresAt)}</span></div>
-            <p>Expires {new Date(cert.expiresAt).toLocaleDateString()} · {({ downloaded: 'Installer downloaded', pending: 'Download pending', expired: 'Download unavailable', unavailable: 'Download unavailable' } as Record<string, string>)[cert.exportStatus] ?? 'Download unavailable'}</p>
+        <div className="certificate-list">{inventory.certificates.map((cert) => <article className="certificate-card" key={cert.id}><div className="section-heading"><div><h4>{cert.name}</h4><p className="muted">{({ ios: 'iPhone or iPad', ipados: 'iPad', macos: 'Mac', windows: 'Windows PC', android: 'Android phone or tablet', other: 'Other device' } as Record<string, string>)[cert.platform] ?? cert.platform}</p></div><span className="badge">{expiry(cert.expiresAt)}</span></div>
+            <p>Expires {new Date(cert.expiresAt).toLocaleDateString()} · {({ downloaded: 'Certificate downloaded', pending: 'Download pending', expired: 'Download unavailable', unavailable: 'Download unavailable' } as Record<string, string>)[cert.exportStatus] ?? 'Download unavailable'}</p>
             <details className="subdetails"><summary>Certificate details</summary><p className="fingerprint">Serial: {cert.serial}<br />SHA-256: {cert.fingerprint}</p></details>
             <div className="certificate-actions">{inventory.certificates.some((item) => item.replacesId === cert.id && item.replacementConfirmedAt) ? <p>Replacement tested. This older certificate remains valid until expiry; reminders suppressed.</p> : <button disabled={busy || Boolean(bundle && !downloaded)} onClick={() => replace(cert)}>Replace certificate</button>}
             {cert.replacesId && <><p>Replaces {inventory.certificates.find((item) => item.id === cert.replacesId)?.name ?? 'an older identity'}.</p>

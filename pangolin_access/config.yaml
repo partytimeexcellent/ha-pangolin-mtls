@@ -1,5 +1,5 @@
 name: HA Pangolin Access
-version: "0.1.0-dev.17"
+version: "0.1.0-dev.18"
 slug: pangolin_access
 description: "Create device certificates for Home Assistant access through Pangolin mTLS"
 url: https://github.com/partytimeexcellent/ha-pangolin-mtls/tree/main/pangolin_access

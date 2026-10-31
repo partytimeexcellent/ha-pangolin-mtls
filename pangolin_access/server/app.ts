@@ -276,7 +276,7 @@ export async function createApp(options: Options, settings: {
   app.post('/api/certificates', { config: { rateLimit: { max: 3, timeWindow: 60_000 } } }, async (request) => {
     const input = z.strictObject({
       name: z.string().trim().min(1).max(80).regex(/^[^\x00-\x1f\x7f]+$/),
-      platform: z.enum(['ios', 'ipados', 'macos', 'other']),
+      platform: z.enum(['ios', 'ipados', 'macos', 'windows', 'android', 'other']),
       lifetimeDays: z.number().int().min(1).max(365).default(90),
       replacesId: z.string().uuid().optional(),
     }).safeParse(request.body);

@@ -4,9 +4,9 @@ Use this page after [preparing the CA and protected Pangolin resource](installat
 
 ## Issue one identity per device
 
-Open the HA app through an already working local/management connection as an authorized app administrator. Under **Device certificates → Add a device**, enter the device name, choose iOS/iPadOS and a lifetime, then select **Create device certificate**.
+Open the HA app through an already working local/management connection as an authorized app administrator. Under **Device certificates → Add a device**, enter the device name, choose **iPhone or iPad** and a lifetime, then select **Create device certificate**. Both devices use the same selector and ZIP format.
 
-Save the separately displayed password and select **Download installer (.zip)** before its five-minute expiry. Use a new identity for each device. Do not recreate the installation's CA or reconfigure Pangolin for each enrollment.
+Save the separately displayed password and select **Download certificate package (.zip)** before its five-minute expiry. Use a new identity for each device. Do not recreate the installation's CA or reconfigure Pangolin for each enrollment.
 
 The package contains the device private key, its certificate and the public issuer certificate. It is not the public `.pem` that Pangolin trusts. Keep the package/password private and separate during transfer. A downloaded package is not proof of installation.
 
@@ -15,20 +15,20 @@ The package contains the device private key, its certificate and the public issu
 | Intended client | Installation path |
 | --- | --- |
 | Companion | Import the `.p12` inside Companion, using its Files picker. ZIP transfer avoids the unwanted Settings handoff. |
-| Safari | Download the installer ZIP and use Install for Safari.mobileconfig to complete installation in iOS Settings. |
-| Both on the same iPhone | Download the installer ZIP: import Home Assistant identity.p12 inside Companion, then install Install for Safari.mobileconfig in Settings. Both contain the same encrypted identity and use the same password. |
+| Safari | Download the certificate package ZIP and use Install for Safari.mobileconfig to complete installation in iOS Settings. |
+| Both on the same iPhone | Download the certificate package ZIP: import Home Assistant identity.p12 inside Companion, then install Install for Safari.mobileconfig in Settings. Both contain the same encrypted identity and use the same password. |
 
 Using one identity for Safari and Companion on your own physical device is a reasonable default when both should have the same access. iOS stores the identity separately for Apple apps and for Companion; installing it in one place does not automatically install it in the other. [Apple explains keychain access](https://developer.apple.com/library/archive/qa/qa1745/_index.html).
 
 Both installations contain the same private key. Compromise of either copy compromises that identity, and the certificate alone cannot distinguish Safari traffic from Companion traffic. The package is not hardware-bound: anyone with the file and password could install it elsewhere. Use a fresh identity for each additional physical device. Separate app identities are an option when you need distinct certificate records, but the current shared-CA setup still does not offer individual certificate revocation.
 
-Download once and keep the encrypted package available only until both intended imports and connection checks succeed. The installer ZIP has one single-use download permission; you do not need a second download to install the same file twice. If you already deleted the downloaded file after importing into Companion, issue a replacement and update both installations; the app cannot recover that earlier package or password.
+Download once and keep the encrypted package available only until both intended imports and connection checks succeed. The certificate package ZIP has one single-use download permission; you do not need a second download to install the same file twice. If you already deleted the downloaded file after importing into Companion, issue a replacement and update both installations; the app cannot recover that earlier package or password.
 
 ## Transfer a ZIP to avoid the iOS Settings handoff
 
 AirDropping a bare `.p12` may open iOS Settings for system-wide identity installation. Use an archive when transferring from a Mac:
 
-1. Choose **Download installer (.zip)**. For iOS/iPadOS the app offers only this download, named **iOS mTLS installer.zip**.
+1. Choose **Download certificate package (.zip)**. For iOS/iPadOS the app offers only this download, named **iPhone or iPad certificate package.zip**.
 2. AirDrop the resulting `.zip` to the iPhone/iPad and save/open it in **Files**.
 3. Tap the ZIP in Files to extract it. It contains **Home Assistant identity.p12** for Companion and **Install for Safari.mobileconfig** for Safari. Both wrap the same identity. Install only the file for the client you use, or both for both clients.
 4. Leave the `.p12` in Files; select it from **inside Companion's file importer** rather than tapping it in Files.
@@ -50,7 +50,7 @@ No global “Always Trust” setting for the client CA is needed. The server's p
 ## Install for Safari through iOS Settings
 
 1. Use an existing working local/management connection to obtain the identity. Do not rely on the protected hostname to download your first certificate before it is installed.
-2. Download **iOS mTLS installer.zip** and extract it. Open or AirDrop **Install for Safari.mobileconfig** to start the Settings installation flow. If you also use Companion, import **Home Assistant identity.p12** through its picker. If your installed iOS version does not hand the extracted profile to Settings, transfer that same profile separately from your Mac; do not issue another identity just to retry transfer. A bare `.p12` can still be installed, but iOS may title it generically as “Identity Certificate.”
+2. Download **iPhone or iPad certificate package.zip** and extract it. Open or AirDrop **Install for Safari.mobileconfig** to start the Settings installation flow. If you also use Companion, import **Home Assistant identity.p12** through its picker. If your installed iOS version does not hand the extracted profile to Settings, transfer that same profile separately from your Mac; do not issue another identity just to retry transfer. A bare `.p12` can still be installed, but iOS may title it generically as “Identity Certificate.”
 3. Open **Settings → Profile Downloaded**, or **Settings → General → VPN & Device Management**, and select the pending identity/profile. Review its contents, choose **Install**, and enter the device passcode and package password when requested. This installs a certificate identity; it does not enroll the phone in a device management service. Installation requires your approval, rather than happening silently. [Apple's certificate distribution guide](https://support.apple.com/en-ca/guide/deployment/depcdc9a6a3f/web), [profile installation instructions](https://support.apple.com/en-gb/102400).
 4. With the prepared resource active and mTLS enabled, open the protected HA HTTPS hostname in Safari. Select or approve the identity if Safari prompts, then complete normal HA login.
 5. Test Safari separately over cellular: open a dashboard and check a harmless control. A successful Companion connection does not establish Safari success. Record the Safari result separately; this project's Safari workflow remains unverified until tested.

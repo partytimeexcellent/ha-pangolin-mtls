@@ -45,8 +45,8 @@ The app requests Core API permission for this feature even when reminders are of
 
 ## Replace a device certificate
 
-1. In the inventory, choose **Replace certificate** beside the intended device. Review its name, platform and lifetime, then choose **Issue replacement**. A fresh key and password are generated under the existing CA.
-2. Save the password separately and choose **Download installer (.zip)** within five minutes. For iOS/iPadOS this is the only offered format: **iOS mTLS installer.zip** includes Home Assistant identity.p12 and Install for Safari.mobileconfig for the same identity. Import the new package inside the intended app; on iPhone use the [Companion import guide](ios-enrollment.md).
+1. In the inventory, choose **Replace certificate** beside the intended device. Review its name, platform and lifetime, then choose **Create replacement**. A fresh key and password are generated under the existing CA.
+2. Save the password separately and download within five minutes. **iPhone or iPad** offers **Download certificate package (.zip)**, containing Home Assistant identity.p12 and Install for Safari.mobileconfig for the same identity. **Mac, Windows and Android** offer **Download certificate (.p12)**. Import the new identity using the [instructions for your device](device-installation.md).
 3. If the same identity is installed in Safari and Companion on one iPhone, import the replacement into both places using their separate installation paths. Close/reopen each intended client and test the protected external hostname over cellular or another external network, avoiding a local fallback or existing connection. Normal Home Assistant login remains required.
 4. Under the replacement's inventory row, check **I imported this replacement and tested access**, then choose **Confirm replacement tested**. This records your observation and suppresses future reminders for the older record. It does not revoke the old identity or dismiss previously delivered notifications; dismiss those in HA.
 

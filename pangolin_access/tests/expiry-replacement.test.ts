@@ -14,6 +14,35 @@ import { createApp } from '../server/app.js';
 const day = 86_400_000;
 const actor = 'a'.repeat(32);
 
+test('Windows and Android selections issue direct password-protected P12 downloads', async (t) => {
+  const root = await mkdtemp(join(tmpdir(), 'ha-device-platforms-'));
+  const service = await PkiService.open(root);
+  const origin = 'https://ha.example.test';
+  const headers = { 'x-remote-user-id': actor, 'x-ingress-path': '/api/hassio_ingress/disposable_fixture_for_tests/' };
+  const remoteAddress = '172.30.32.2';
+  const app = await createApp({ admin_user_ids: [actor], home_assistant_origin: origin, enable_certificate_management: true }, { pki: service });
+  t.after(async () => { await app.close(); await rm(root, { recursive: true, force: true }); });
+  const post = async (url: string, payload: Record<string, unknown>) => {
+    const session = (await app.inject({ url: '/api/session', headers, remoteAddress })).json();
+    return app.inject({ method: 'POST', url, payload, remoteAddress, headers: { ...headers, origin,
+      'x-access-session': session.sessionId, 'x-csrf-token': session.csrfToken } });
+  };
+  await service.createAuthority(actor);
+  for (const platform of ['windows', 'android']) {
+    const issued = await post('/api/certificates', { name: `Fixture ${platform}`, platform, lifetimeDays: 30 });
+    assert.equal(issued.statusCode, 200);
+    const bundle = issued.json();
+    assert.equal(bundle.certificate.platform, platform);
+    const downloaded = await post(`/api/certificates/${bundle.id}/download`, { token: bundle.token, format: 'p12' });
+    assert.equal(downloaded.statusCode, 200);
+    assert.match(String(downloaded.headers['content-type']), /^application\/x-pkcs12/);
+    assert.equal(downloaded.headers['content-disposition'], 'attachment; filename="Home Assistant identity.p12"');
+    const path = join(root, `${platform}.p12`);
+    await writeFile(path, downloaded.rawPayload, { mode: 0o600 });
+    await openssl(['pkcs12', '-in', path, '-passin', 'fd:3', '-noout'], [bundle.password]);
+  }
+});
+
 test('ZIP is a single-use encrypted P12; replacement confirmation records a test without revoking the old identity', async (t) => {
   const root = await mkdtemp(join(tmpdir(), 'ha-replacement-'));
   const service = await PkiService.open(root);
@@ -43,7 +72,7 @@ test('ZIP is a single-use encrypted P12; replacement confirmation records a test
   const downloaded = await post(`/api/certificates/${replacement.id}/download`, { token: replacement.token, format: 'zip' });
   assert.equal(downloaded.statusCode, 200);
   assert.match(String(downloaded.headers['content-type']), /^application\/zip/);
-  assert.equal(downloaded.headers['content-disposition'], 'attachment; filename="iOS mTLS installer.zip"');
+  assert.equal(downloaded.headers['content-disposition'], 'attachment; filename="iPhone or iPad certificate package.zip"');
   assert.equal(downloaded.headers['cache-control'], 'no-store');
   const files = unzipSync(downloaded.rawPayload);
   assert.deepEqual(Object.keys(files).sort(), ['Home Assistant identity.p12', 'Install for Safari.mobileconfig']);
